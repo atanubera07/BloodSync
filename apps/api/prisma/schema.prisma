@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum Role {
+  USER
+  ADMIN
+}
+enum DonorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum RequestStatus {
+  OPEN
+  CLOSED
+  EXPIRED
+}
+enum EmailTokenKind {
+  VERIFY
+  RESET
+}
+enum Urgency {
+  NORMAL
+  URGENT
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique @db.VarChar(254)
+  passwordHash String
+  fullName String @db.VarChar(100)
+  role Role @default(USER)
+  emailVerifiedAt DateTime?
+  createdAt DateTime @default(now())
+  sessions Session[]
+  emailTokens EmailToken[]
+  donor DonorProfile?
+  requests BloodRequest[]
+}
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, revokedAt])
+}
+model DonorProfile {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  bloodGroup String @db.VarChar(3)
+  birthDate DateTime @db.Date
+  weightKg Decimal @db.Decimal(5,2)
+  lastDonationAt DateTime? @db.Date
+  city String @db.VarChar(100)
+  latitude Decimal? @db.Decimal(9,6)
+  longitude Decimal? @db.Decimal(9,6)
+  status DonorStatus @default(PENDING)
+  consentToMatch Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@index([bloodGroup, status, consentToMatch])
+}
+model BloodRequest {
+  id String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+  owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
+  bloodGroup String @db.VarChar(3)
+  units Int
+  urgency Urgency
+  city String @db.VarChar(100)
+  latitude Decimal? @db.Decimal(9,6)
+  longitude Decimal? @db.Decimal(9,6)
+  expiresAt DateTime
+  status RequestStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  @@index([bloodGroup, status, expiresAt])
+  @@index([ownerId, createdAt])
+}
+model AuditEvent {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String? @db.Uuid
+  action String @db.VarChar(80)
+  targetId String? @db.Uuid
+  createdAt DateTime @default(now())
+  @@index([actorId, createdAt])
+}
+
+model EmailToken {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  kind EmailTokenKind
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId, kind, usedAt])
+}
