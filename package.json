@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/*' dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "typecheck": "pnpm --filter @bloodsync/shared build && pnpm -r typecheck",
+    "test": "pnpm --filter @bloodsync/shared build && pnpm -r test",
     "db:generate": "pnpm --filter @bloodsync/api db:generate",
     "db:migrate": "pnpm --filter @bloodsync/api db:migrate"
   }
