@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { consentSchema } from './privacy';
 
 export const bloodGroups = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'] as const;
 export const bloodGroupSchema = z.enum(bloodGroups);
@@ -37,6 +38,7 @@ export const donorProfileSchema = z
     message: 'Provide both latitude and longitude',
     path: ['latitude'],
   });
+export const donorSaveSchema = donorProfileSchema.safeExtend({ consent: consentSchema.optional() });
 
 const requestBaseSchema = z.strictObject({
   bloodGroup: bloodGroupSchema,

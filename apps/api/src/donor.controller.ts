@@ -2,6 +2,9 @@ import { Body, Controller, Get, HttpCode, Param, Post, Put, Req, UseGuards } fro
 import { AuthGuard } from './auth.guard';
 import { DonorService } from './donor.service';
 import type { AuthRequest } from './actor';
+import { donorSaveSchema } from '@bloodsync/shared';
+import type { z } from 'zod';
+import { ZodBodyPipe } from './zod-body.pipe';
 @Controller('donors/me')
 @UseGuards(AuthGuard)
 export class DonorController {
@@ -9,7 +12,10 @@ export class DonorController {
   @Get() getOwn(@Req() req: AuthRequest) {
     return this.donors.getOwn(req.user);
   }
-  @Put() saveOwn(@Req() req: AuthRequest, @Body() body: unknown) {
+  @Put() saveOwn(
+    @Req() req: AuthRequest,
+    @Body(new ZodBodyPipe(donorSaveSchema)) body: z.infer<typeof donorSaveSchema>,
+  ) {
     return this.donors.saveOwn(req.user, body);
   }
   @Get('matches') matches(@Req() req: AuthRequest) {

@@ -1,27 +1,34 @@
-import {
-  BadRequestException,
-  HttpException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { loginSchema, registerSchema } from '@bloodsync/shared';
+import {
+  loginSchema,
+  registerSchema,
+  passwordSchema,
+  emailInputSchema,
+  tokenInputSchema,
+  resetPasswordSchema,
+} from '@bloodsync/shared';
+import type { z } from 'zod';
 import * as argon2 from 'argon2';
-import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readConfig } from './config';
+import { createHmac, createHash, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { ConfigService, readConfig } from './config';
 import { MailService } from './mail.service';
 
 const ACCESS_MS = 15 * 60_000;
 const REFRESH_MS = 7 * 24 * 60 * 60_000;
 export const MAX_FAILED_LOGINS = 5;
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+const dummyHash = argon2.hash('not-a-real-account-password', { type: argon2.argon2id });
+export const derivedKey = (secret: string, purpose: string) =>
+  Buffer.from(hkdfSync('sha256', secret, 'BloodSync v1', purpose, 32));
 @Injectable()
 export class AuthService {
   constructor(
     private readonly db: PrismaService,
     private readonly mail: MailService,
+    private readonly config?: ConfigService,
   ) {}
-  async register(input: unknown) {
+  async register(input: z.infer<typeof registerSchema>) {
     const data = registerSchema.safeParse(input);
     if (!data.success) throw new BadRequestException('Invalid registration details');
     const exists = await this.db.user.findUnique({
@@ -44,16 +51,21 @@ export class AuthService {
         throw new BadRequestException('Unable to create account with these details');
       throw error;
     }
-    await this.sendEmailToken(user.id, user.email, 'VERIFY');
+    await this.mail.enqueue(user.email, 'VERIFY');
     return user;
   }
-  async login(input: unknown) {
+  async login(input: z.infer<typeof loginSchema>) {
     const data = loginSchema.safeParse(input);
     if (!data.success) throw new UnauthorizedException('Invalid email or password');
     const user = await this.db.user.findUnique({ where: { email: data.data.email.toLowerCase() } });
-    if (!user) throw new UnauthorizedException('Invalid email or password');
-    if (user.lockedUntil && user.lockedUntil > new Date())
-      throw new HttpException('Too many attempts. Try again later.', 429);
+    if (!user) {
+      await argon2.verify(await dummyHash, data.data.password);
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      await argon2.verify(await dummyHash, data.data.password);
+      throw new UnauthorizedException('Invalid email or password');
+    }
     if (user.lockedUntil && user.lockedUntil <= new Date()) {
       await this.db.user.update({
         where: { id: user.id },
@@ -78,25 +90,12 @@ export class AuthService {
       });
     return this.issueSession(user.id);
   }
-  private async sendEmailToken(userId: string, email: string, kind: 'VERIFY' | 'RESET') {
-    const token = randomBytes(32).toString('base64url');
-    await this.db.emailToken.create({
-      data: {
-        userId,
-        kind,
-        tokenHash: hashToken(token),
-        expiresAt: new Date(Date.now() + (kind === 'VERIFY' ? 24 * 60 * 60_000 : 30 * 60_000)),
-      },
-    });
-    await this.mail.sendAction(email, kind === 'VERIFY' ? 'verify' : 'reset', token);
-  }
-  async requestVerification(input: unknown) {
+  async requestVerification(input: z.infer<typeof emailInputSchema>) {
     const email = this.parseEmail(input);
-    const user = await this.db.user.findUnique({ where: { email } });
-    if (user && !user.emailVerifiedAt) await this.sendEmailToken(user.id, user.email, 'VERIFY');
+    await this.mail.enqueue(email, 'VERIFY');
     return { ok: true };
   }
-  async verifyEmail(input: unknown) {
+  async verifyEmail(input: z.infer<typeof tokenInputSchema>) {
     const token = this.parseToken(input);
     const record = await this.db.emailToken.findUnique({ where: { tokenHash: hashToken(token) } });
     if (!record || record.kind !== 'VERIFY' || record.usedAt || record.expiresAt < new Date())
@@ -111,24 +110,23 @@ export class AuthService {
     });
     return { ok: true };
   }
-  async requestPasswordReset(input: unknown) {
+  async requestPasswordReset(input: z.infer<typeof emailInputSchema>) {
     const email = this.parseEmail(input);
-    const user = await this.db.user.findUnique({ where: { email } });
-    if (user) await this.sendEmailToken(user.id, user.email, 'RESET');
+    await this.mail.enqueue(email, 'RESET');
     return { ok: true };
   }
-  async resetPassword(input: unknown) {
+  async resetPassword(input: z.infer<typeof resetPasswordSchema>) {
     if (!input || typeof input !== 'object') throw new BadRequestException('Invalid reset details');
     const { token, password } = input as Record<string, unknown>;
     const parsedToken = this.parseToken({ token });
-    if (typeof password !== 'string' || password.length < 12 || password.length > 128)
+    if (!passwordSchema.safeParse(password).success)
       throw new BadRequestException('Invalid reset details');
     const record = await this.db.emailToken.findUnique({
       where: { tokenHash: hashToken(parsedToken) },
     });
     if (!record || record.kind !== 'RESET' || record.usedAt || record.expiresAt < new Date())
       throw new BadRequestException('Invalid or expired link');
-    const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+    const passwordHash = await argon2.hash(password as string, { type: argon2.argon2id });
     await this.db.$transaction(async (tx) => {
       const claimed = await tx.emailToken.updateMany({
         where: { id: record.id, usedAt: null },
@@ -166,7 +164,12 @@ export class AuthService {
     return token;
   }
   private sign(payload: string) {
-    return createHmac('sha256', readConfig().SESSION_SECRET).update(payload).digest('base64url');
+    return createHmac(
+      'sha256',
+      derivedKey((this.config?.values ?? readConfig()).SESSION_SECRET, 'access-token'),
+    )
+      .update(payload)
+      .digest('base64url');
   }
   private accessToken(userId: string, sessionId: string) {
     const payload = Buffer.from(
@@ -199,7 +202,7 @@ export class AuthService {
       throw new UnauthorizedException();
     const session = await this.db.session.findUnique({
       where: { id: decoded.sid },
-      include: { user: true },
+      include: { user: { select: { id: true, role: true, fullName: true, email: true } } },
     });
     if (
       !session ||

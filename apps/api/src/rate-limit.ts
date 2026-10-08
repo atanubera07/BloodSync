@@ -11,12 +11,16 @@ const POLICIES = [
   { path: /^\/contact$/, limit: 5, name: 'contact' },
   { path: /^\/donors\/me\/interests\//, limit: 15, name: 'interest' },
   { path: /^\/me\/consent$/, limit: 10, name: 'consent' },
+  { path: /^\/me$/, limit: 3, name: 'account-delete' },
+  { path: /^\/me\/export$/, limit: 5, name: 'data-export' },
 ];
 const script = `local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return {n, redis.call('TTL', KEYS[1])}`;
 export function rateLimit(redis: Redis) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
-    const policy = POLICIES.find((entry) => entry.path.test(req.path));
+    const path = req.path.replace(/^\/v1(?=\/)/, '');
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && path !== '/me/export')
+      return next();
+    const policy = POLICIES.find((entry) => entry.path.test(path));
     if (!policy) return next();
     const address = req.ip || req.socket.remoteAddress || 'unknown';
     const identity =

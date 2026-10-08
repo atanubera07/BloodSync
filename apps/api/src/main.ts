@@ -1,19 +1,30 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { readConfig } from './config';
+import { ConfigService } from './config';
 import helmet from 'helmet';
 import { ApiLogger } from './logger';
 import { isAllowedMutation } from './security';
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import { BadRequestException } from '@nestjs/common';
-import Redis from 'ioredis';
+import { BadRequestException, RequestMethod } from '@nestjs/common';
 import { rateLimit } from './rate-limit';
+import { RateLimitRedis } from './rate-limit-redis';
+import { installOpenApi } from './openapi';
 import type { Request, Response, NextFunction } from 'express';
 async function bootstrap() {
-  const config = readConfig();
   const app = await NestFactory.create(AppModule, { bodyParser: true, logger: new ApiLogger() });
+  const config = app.get(ConfigService).values;
+  app.setGlobalPrefix('v1', {
+    exclude: ['health', 'health/live', 'health/ready'].map((path) => ({
+      path,
+      method: RequestMethod.GET,
+    })),
+  });
+  installOpenApi(app);
+  app.enableShutdownHooks();
+  if (config.NODE_ENV === 'production' && config.TRUST_PROXY_HOPS === 0)
+    new ApiLogger().warn('TRUST_PROXY_HOPS is 0 in production; verify the hosting proxy topology');
   if (config.TRUST_PROXY_HOPS)
     app.getHttpAdapter().getInstance().set('trust proxy', config.TRUST_PROXY_HOPS);
   app.use(helmet());
@@ -25,8 +36,10 @@ async function bootstrap() {
       return next(new BadRequestException('Invalid request origin'));
     next();
   });
-  const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 });
-  app.use(rateLimit(redis));
+  app.use(rateLimit(app.get(RateLimitRedis).client));
   await app.listen(config.API_PORT, '0.0.0.0');
 }
-bootstrap();
+bootstrap().catch((error) => {
+  new ApiLogger().error(error);
+  process.exit(1);
+});

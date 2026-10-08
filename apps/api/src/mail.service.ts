@@ -1,10 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import nodemailer from 'nodemailer';
-import { readConfig } from './config';
+import { ConfigService } from './config';
+import { Queue, Worker } from 'bullmq';
+import { randomBytes, createHash } from 'node:crypto';
+import { PrismaService } from './prisma.service';
 @Injectable()
-export class MailService {
+export class MailService implements OnApplicationBootstrap, OnApplicationShutdown {
+  private queue?: Queue;
+  private worker?: Worker;
+  constructor(
+    private readonly db: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
+
+  async onApplicationBootstrap() {
+    const connection = { url: this.config.values.REDIS_URL, maxRetriesPerRequest: null };
+    this.queue = new Queue('account-email', { connection });
+    this.worker = new Worker<{ email: string; kind: 'VERIFY' | 'RESET' }>(
+      'account-email',
+      async (job) => {
+        const user = await this.db.user.findUnique({
+          where: { email: job.data.email },
+          select: { id: true, email: true, emailVerifiedAt: true },
+        });
+        if (!user || (job.data.kind === 'VERIFY' && user.emailVerifiedAt)) return;
+        const token = randomBytes(32).toString('base64url');
+        await this.db.emailToken.create({
+          data: {
+            userId: user.id,
+            kind: job.data.kind,
+            tokenHash: createHash('sha256').update(token).digest('hex'),
+            expiresAt: new Date(Date.now() + (job.data.kind === 'VERIFY' ? 86_400_000 : 1_800_000)),
+          },
+        });
+        await this.sendAction(user.email, job.data.kind === 'VERIFY' ? 'verify' : 'reset', token);
+      },
+      { connection },
+    );
+  }
+
+  async enqueue(email: string, kind: 'VERIFY' | 'RESET') {
+    if (!this.queue) throw new Error('Account email queue is not ready');
+    await this.queue.add(
+      'send',
+      { email, kind },
+      { removeOnComplete: true, attempts: 3, backoff: { type: 'exponential', delay: 1000 } },
+    );
+  }
+
+  async onApplicationShutdown() {
+    await this.worker?.close();
+    await this.queue?.close();
+  }
+
   async sendAction(email: string, kind: 'verify' | 'reset', token: string) {
-    const config = readConfig();
+    const config = this.config.values;
     const url = new URL(kind === 'verify' ? '/verify-email' : '/reset-password', config.WEB_ORIGIN);
     url.searchParams.set('token', token);
     const transport = nodemailer.createTransport({

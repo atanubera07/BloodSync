@@ -5,13 +5,17 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { assessDonorEligibility, donorProfileSchema } from '@bloodsync/shared';
+import {
+  assessDonorEligibility,
+  donorProfileSchema,
+  donorSaveSchema,
+  PRIVACY_VERSION,
+} from '@bloodsync/shared';
 import { z } from 'zod';
 import { PrismaService } from './prisma.service';
 import { MatchingService } from './matching.service';
 import { requireUser, type Actor } from './actor';
 import { coarseCoordinate } from './geo';
-import { PRIVACY_VERSION } from './me.service';
 
 @Injectable()
 export class DonorService {
@@ -38,7 +42,7 @@ export class DonorService {
     if (!profile) throw new NotFoundException('Donor profile not found');
     return profile;
   }
-  async saveOwn(actor: Actor, input: unknown) {
+  async saveOwn(actor: Actor, input: z.infer<typeof donorSaveSchema>) {
     requireUser(actor);
     const details = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
     const { consent: consentInput, ...profileInput } = details;

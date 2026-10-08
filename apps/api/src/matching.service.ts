@@ -6,9 +6,9 @@ import {
   compatibleDonorGroups,
   compatibleRecipientGroups,
   type BloodGroup,
+  PRIVACY_VERSION,
 } from '@bloodsync/shared';
 import { PrismaService } from './prisma.service';
-import { PRIVACY_VERSION } from './me.service';
 
 export const MATCH_RADIUS_KM = 50;
 type DonorRow = {
@@ -30,6 +30,21 @@ type RequestRow = {
   expiresAt: Date;
   distanceKm: number | null;
 };
+/** Table alias is selected internally, never from request input. */
+function geoSql(table: 'd' | 'r', city: string, latitude: number | null, longitude: number | null) {
+  const row = Prisma.raw(table);
+  if (latitude === null || longitude === null)
+    return {
+      near: Prisma.sql`lower(${row}."city") = lower(${city})`,
+      distance: Prisma.sql`NULL::double precision`,
+    };
+  const point = Prisma.sql`ST_SetSRID(ST_MakePoint(${row}."longitude"::double precision, ${row}."latitude"::double precision), 4326)::geography`;
+  const target = Prisma.sql`ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography`;
+  return {
+    near: Prisma.sql`((${row}."latitude" IS NOT NULL AND ${row}."longitude" IS NOT NULL AND ST_DWithin(${point}, ${target}, ${MATCH_RADIUS_KM * 1000})) OR ((${row}."latitude" IS NULL OR ${row}."longitude" IS NULL) AND lower(${row}."city") = lower(${city})))`,
+    distance: Prisma.sql`CASE WHEN ${row}."latitude" IS NOT NULL AND ${row}."longitude" IS NOT NULL THEN ROUND((ST_Distance(${point}, ${target}) / 1000)::numeric, 1)::double precision ELSE NULL END`,
+  };
+}
 @Injectable()
 export class MatchingService {
   constructor(private readonly db: PrismaService) {}
@@ -38,23 +53,7 @@ export class MatchingService {
     const groups = compatibleDonorGroups(request.bloodGroup as BloodGroup);
     const latitude = request.latitude == null ? null : Number(request.latitude);
     const longitude = request.longitude == null ? null : Number(request.longitude);
-    const near =
-      latitude !== null && longitude !== null
-        ? Prisma.sql`
-      ((d."latitude" IS NOT NULL AND d."longitude" IS NOT NULL AND ST_DWithin(
-        ST_SetSRID(ST_MakePoint(d."longitude"::double precision, d."latitude"::double precision), 4326)::geography,
-        ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, ${MATCH_RADIUS_KM * 1000}
-      )) OR ((d."latitude" IS NULL OR d."longitude" IS NULL) AND lower(d."city") = lower(${request.city})))`
-        : Prisma.sql`lower(d."city") = lower(${request.city})`;
-    const distance =
-      latitude !== null && longitude !== null
-        ? Prisma.sql`
-      CASE WHEN d."latitude" IS NOT NULL AND d."longitude" IS NOT NULL THEN
-        ROUND((ST_Distance(
-          ST_SetSRID(ST_MakePoint(d."longitude"::double precision, d."latitude"::double precision), 4326)::geography,
-          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
-        ) / 1000)::numeric, 1)::double precision ELSE NULL END`
-        : Prisma.sql`NULL::double precision`;
+    const { near, distance } = geoSql('d', request.city, latitude, longitude);
     const rows = await this.db.$queryRaw<DonorRow[]>(Prisma.sql`
       SELECT d."id", d."bloodGroup", d."city", d."birthDate", d."weightKg", d."lastDonationAt", ${distance} AS "distanceKm"
       FROM "DonorProfile" d WHERE EXISTS (
@@ -83,23 +82,7 @@ export class MatchingService {
     const groups = compatibleRecipientGroups(donor.bloodGroup as BloodGroup);
     const latitude = donor.latitude == null ? null : Number(donor.latitude);
     const longitude = donor.longitude == null ? null : Number(donor.longitude);
-    const near =
-      latitude !== null && longitude !== null
-        ? Prisma.sql`
-      ((r."latitude" IS NOT NULL AND r."longitude" IS NOT NULL AND ST_DWithin(
-        ST_SetSRID(ST_MakePoint(r."longitude"::double precision, r."latitude"::double precision), 4326)::geography,
-        ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, ${MATCH_RADIUS_KM * 1000}
-      )) OR ((r."latitude" IS NULL OR r."longitude" IS NULL) AND lower(r."city") = lower(${donor.city})))`
-        : Prisma.sql`lower(r."city") = lower(${donor.city})`;
-    const distance =
-      latitude !== null && longitude !== null
-        ? Prisma.sql`
-      CASE WHEN r."latitude" IS NOT NULL AND r."longitude" IS NOT NULL THEN
-        ROUND((ST_Distance(
-          ST_SetSRID(ST_MakePoint(r."longitude"::double precision, r."latitude"::double precision), 4326)::geography,
-          ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography
-        ) / 1000)::numeric, 1)::double precision ELSE NULL END`
-        : Prisma.sql`NULL::double precision`;
+    const { near, distance } = geoSql('r', donor.city, latitude, longitude);
     const rows = await this.db.$queryRaw<RequestRow[]>(Prisma.sql`
       SELECT r."id", r."bloodGroup", r."units", r."urgency", r."hospitalName", r."city", r."expiresAt", ${distance} AS "distanceKm"
       FROM "BloodRequest" r WHERE r."status" = 'OPEN' AND r."expiresAt" > NOW()
@@ -109,6 +92,7 @@ export class MatchingService {
   }
 
   async isRequestNearDonor(request: BloodRequest, donor: DonorProfile) {
+    if (request.status !== 'OPEN' || request.expiresAt <= new Date()) return false;
     if (
       !compatibleDonorGroups(request.bloodGroup as BloodGroup).includes(
         donor.bloodGroup as BloodGroup,

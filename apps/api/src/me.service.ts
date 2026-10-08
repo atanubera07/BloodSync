@@ -7,8 +7,9 @@ import {
 import { PrismaService } from './prisma.service';
 import type { Actor } from './actor';
 import * as argon2 from 'argon2';
+import { PRIVACY_VERSION, consentSchema, deleteAccountSchema } from '@bloodsync/shared';
+import type { z } from 'zod';
 
-export const PRIVACY_VERSION = '2026-10-08';
 @Injectable()
 export class MeService {
   constructor(private readonly db: PrismaService) {}
@@ -18,7 +19,7 @@ export class MeService {
       orderBy: { grantedAt: 'desc' },
     });
   }
-  async grantConsent(actor: Actor, input: unknown) {
+  async grantConsent(actor: Actor, input: z.infer<typeof consentSchema>) {
     if (!input || typeof input !== 'object')
       throw new BadRequestException('Consent choices required');
     const data = input as Record<string, unknown>;
@@ -92,7 +93,7 @@ export class MeService {
       }),
     };
   }
-  async delete(actor: Actor, input: unknown) {
+  async delete(actor: Actor, input: z.infer<typeof deleteAccountSchema>) {
     const password =
       input && typeof input === 'object' ? (input as Record<string, unknown>).password : undefined;
     if (typeof password !== 'string')

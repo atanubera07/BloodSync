@@ -46,16 +46,10 @@ export class AuthGuard implements CanActivate {
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private readonly auth: AuthService) {}
+  constructor(private readonly authGuard: AuthGuard) {}
   async canActivate(context: ExecutionContext) {
+    await this.authGuard.canActivate(context);
     const req = context.switchToHttp().getRequest<Request & { user?: { role: string } }>();
-    const token = accessToken(req);
-    if (!token) throw new UnauthorizedException();
-    try {
-      req.user = await this.auth.verifyAccess(token);
-    } catch {
-      throw new UnauthorizedException();
-    }
     if (!req.user) throw new UnauthorizedException();
     if (req.user.role !== 'ADMIN') throw new ForbiddenException();
     return true;

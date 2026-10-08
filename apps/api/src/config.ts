@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 const configSchema = z.object({
   REDIS_URL: z.url().default('redis://localhost:6379'),
@@ -26,4 +27,14 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   )
     throw new Error('Invalid production server environment');
   return result.data;
+}
+
+export type AppConfig = ReturnType<typeof readConfig>;
+
+@Injectable()
+export class ConfigService {
+  readonly values: AppConfig;
+  constructor() {
+    this.values = readConfig();
+  }
 }

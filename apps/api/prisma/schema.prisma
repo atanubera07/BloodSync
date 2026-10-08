@@ -1,138 +1,157 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 enum Role {
   USER
   ADMIN
 }
+
 enum DonorStatus {
   PENDING
   APPROVED
   REJECTED
 }
+
 enum RequestStatus {
   OPEN
   CLOSED
   EXPIRED
 }
+
 enum EmailTokenKind {
   VERIFY
   RESET
 }
+
 enum Urgency {
   NORMAL
   URGENT
 }
+
 model User {
-  id String @id @default(uuid()) @db.Uuid
-  email String @unique @db.VarChar(254)
-  passwordHash String
-  fullName String @db.VarChar(100)
-  role Role @default(USER)
-  emailVerifiedAt DateTime?
-  failedLoginAttempts Int @default(0)
-  lockedUntil DateTime?
-  createdAt DateTime @default(now())
-  sessions Session[]
-  emailTokens EmailToken[]
-  donor DonorProfile?
-  requests BloodRequest[]
-  interests RequestInterest[]
-  consents ConsentRecord[]
+  id                  String            @id @default(uuid()) @db.Uuid
+  email               String            @unique @db.VarChar(254)
+  passwordHash        String
+  fullName            String            @db.VarChar(100)
+  role                Role              @default(USER)
+  emailVerifiedAt     DateTime?
+  failedLoginAttempts Int               @default(0)
+  lockedUntil         DateTime?
+  createdAt           DateTime          @default(now())
+  sessions            Session[]
+  emailTokens         EmailToken[]
+  donor               DonorProfile?
+  requests            BloodRequest[]
+  interests           RequestInterest[]
+  consents            ConsentRecord[]
 }
+
 model Session {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
-  tokenHash String @unique
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+
   @@index([userId, revokedAt])
 }
+
 model DonorProfile {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @unique @db.Uuid
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
-  bloodGroup String @db.VarChar(3)
-  birthDate DateTime @db.Date
-  weightKg Decimal @db.Decimal(5,2)
-  lastDonationAt DateTime? @db.Date
-  city String @db.VarChar(100)
-  latitude Decimal? @db.Decimal(9,6)
-  longitude Decimal? @db.Decimal(9,6)
-  status DonorStatus @default(PENDING)
-  consentToMatch Boolean @default(false)
-  interests RequestInterest[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String            @id @default(uuid()) @db.Uuid
+  userId         String            @unique @db.Uuid
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bloodGroup     String            @db.VarChar(3)
+  birthDate      DateTime          @db.Date
+  weightKg       Decimal           @db.Decimal(5, 2)
+  lastDonationAt DateTime?         @db.Date
+  city           String            @db.VarChar(100)
+  latitude       Decimal?          @db.Decimal(9, 6)
+  longitude      Decimal?          @db.Decimal(9, 6)
+  status         DonorStatus       @default(PENDING)
+  consentToMatch Boolean           @default(false)
+  interests      RequestInterest[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
   @@index([bloodGroup, status, consentToMatch])
 }
+
 model BloodRequest {
-  id String @id @default(uuid()) @db.Uuid
-  ownerId String @db.Uuid
-  owner User @relation(fields:[ownerId], references:[id], onDelete:Cascade)
-  bloodGroup String @db.VarChar(3)
-  units Int
-  urgency Urgency
-  city String @db.VarChar(100)
-  hospitalName String @db.VarChar(120)
-  latitude Decimal? @db.Decimal(9,6)
-  longitude Decimal? @db.Decimal(9,6)
-  expiresAt DateTime
-  status RequestStatus @default(OPEN)
-  createdAt DateTime @default(now())
-  interests RequestInterest[]
+  id           String            @id @default(uuid()) @db.Uuid
+  ownerId      String            @db.Uuid
+  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bloodGroup   String            @db.VarChar(3)
+  units        Int
+  urgency      Urgency
+  city         String            @db.VarChar(100)
+  hospitalName String            @db.VarChar(120)
+  latitude     Decimal?          @db.Decimal(9, 6)
+  longitude    Decimal?          @db.Decimal(9, 6)
+  expiresAt    DateTime
+  status       RequestStatus     @default(OPEN)
+  createdAt    DateTime          @default(now())
+  interests    RequestInterest[]
+
   @@index([bloodGroup, status, expiresAt])
   @@index([ownerId, createdAt])
 }
+
 model RequestInterest {
-  id String @id @default(uuid()) @db.Uuid
-  requestId String @db.Uuid
-  request BloodRequest @relation(fields:[requestId], references:[id], onDelete:Cascade)
-  donorId String @db.Uuid
-  donor DonorProfile @relation(fields:[donorId], references:[id], onDelete:Cascade)
-  userId String @db.Uuid
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
-  consentAt DateTime @default(now())
+  id        String       @id @default(uuid()) @db.Uuid
+  requestId String       @db.Uuid
+  request   BloodRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  donorId   String       @db.Uuid
+  donor     DonorProfile @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consentAt DateTime     @default(now())
+
   @@unique([requestId, donorId])
   @@index([userId, consentAt])
 }
+
 model AuditEvent {
-  id String @id @default(uuid()) @db.Uuid
-  actorId String? @db.Uuid
-  action String @db.VarChar(80)
-  targetId String? @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @db.Uuid
+  action    String   @db.VarChar(80)
+  targetId  String?  @db.Uuid
   createdAt DateTime @default(now())
-  ipHash String? @db.VarChar(64)
-  result String @default("SUCCESS") @db.VarChar(20)
+  ipHash    String?  @db.VarChar(64)
+  result    String   @default("SUCCESS") @db.VarChar(20)
+
   @@index([actorId, createdAt])
 }
 
 model EmailToken {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
-  kind EmailTokenKind
-  tokenHash String @unique
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String         @db.Uuid
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      EmailTokenKind
+  tokenHash String         @unique
   expiresAt DateTime
-  usedAt DateTime?
-  createdAt DateTime @default(now())
+  usedAt    DateTime?
+  createdAt DateTime       @default(now())
+
   @@index([userId, kind, usedAt])
 }
 
 model ConsentRecord {
-  id String @id @default(uuid()) @db.Uuid
-  userId String @db.Uuid
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
-  privacyVersion String @db.VarChar(40)
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  privacyVersion   String    @db.VarChar(40)
   healthProcessing Boolean
-  contactSharing Boolean
-  grantedAt DateTime @default(now())
-  withdrawnAt DateTime?
+  contactSharing   Boolean
+  grantedAt        DateTime  @default(now())
+  withdrawnAt      DateTime?
+
   @@index([userId, grantedAt])
 }

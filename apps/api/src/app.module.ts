@@ -17,6 +17,8 @@ import { RequestExpiryService } from './request-expiry.service';
 import { MeController } from './me.controller';
 import { MeService } from './me.service';
 import { AuditInterceptor } from './audit.interceptor';
+import { RateLimitRedis } from './rate-limit-redis';
+import { ConfigService } from './config';
 @Module({
   controllers: [
     AuthController,
@@ -28,6 +30,8 @@ import { AuditInterceptor } from './audit.interceptor';
   ],
   providers: [
     PrismaService,
+    ConfigService,
+    RateLimitRedis,
     MailService,
     AuthService,
     AuthGuard,

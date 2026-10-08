@@ -4,13 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { requestSchema, requestUpdateSchema } from '@bloodsync/shared';
+import { requestSchema, requestUpdateSchema, PRIVACY_VERSION } from '@bloodsync/shared';
 import { z } from 'zod';
 import { PrismaService } from './prisma.service';
 import { MatchingService } from './matching.service';
 import { requireUser, type Actor } from './actor';
 import { coarseCoordinate } from './geo';
-import { PRIVACY_VERSION } from './me.service';
 
 @Injectable()
 export class RequestService {
@@ -30,7 +29,7 @@ export class RequestService {
       throw new BadRequestException('Expiry must be 15 minutes to 30 days ahead');
     return date;
   }
-  async create(actor: Actor, input: unknown) {
+  async create(actor: Actor, input: z.infer<typeof requestSchema>) {
     requireUser(actor);
     const parsed = requestSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException('Invalid blood request');
@@ -74,7 +73,7 @@ export class RequestService {
     if (!request) throw new NotFoundException('Blood request not found');
     return this.visibleStatus(request);
   }
-  async updateOwn(actor: Actor, idInput: string, input: unknown) {
+  async updateOwn(actor: Actor, idInput: string, input: z.infer<typeof requestUpdateSchema>) {
     const request = await this.getOwn(actor, idInput);
     if (request.status !== 'OPEN' || request.expiresAt <= new Date())
       throw new ConflictException('Request is no longer open');

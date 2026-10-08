@@ -1,13 +1,22 @@
-import { Injectable, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+  Optional,
+} from '@nestjs/common';
 import { Queue, Worker } from 'bullmq';
 import { PrismaService } from './prisma.service';
+import { ConfigService, readConfig } from './config';
 
 /** A single repeatable BullMQ schedule is shared by all API instances. */
 @Injectable()
 export class RequestExpiryService implements OnApplicationBootstrap, OnApplicationShutdown {
   private queue?: Queue;
   private worker?: Worker;
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    @Optional() private readonly config?: ConfigService,
+  ) {}
 
   async expire() {
     return this.db.bloodRequest.updateMany({
@@ -18,7 +27,7 @@ export class RequestExpiryService implements OnApplicationBootstrap, OnApplicati
 
   async onApplicationBootstrap() {
     const connection = {
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      url: this.config?.values.REDIS_URL ?? readConfig().REDIS_URL,
       maxRetriesPerRequest: null,
     };
     this.queue = new Queue('request-expiry', { connection });

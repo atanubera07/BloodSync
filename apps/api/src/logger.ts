@@ -8,7 +8,7 @@ export function safeMessage(message: unknown): string {
     .replace(/(bs_access|bs_refresh|bs_csrf|token|password)=([^\s;&]+)/gi, '$1=[REDACTED]');
 }
 export const log = pino({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: 'info',
   redact: {
     paths: [
       'password',

@@ -3,7 +3,8 @@ import { Observable, catchError, mergeMap } from 'rxjs';
 import { createHmac } from 'node:crypto';
 import type { Request } from 'express';
 import { PrismaService } from './prisma.service';
-import { readConfig } from './config';
+import { ConfigService } from './config';
+import { derivedKey } from './auth.service';
 
 function eventFor(
   method: string,
@@ -23,16 +24,19 @@ function eventFor(
 }
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request & { user?: { id: string } }>();
-    const path = req.path;
+    const path = req.path.replace(/^\/v1(?=\/)/, '');
     const method = req.method;
     const record = async (result: 'SUCCESS' | 'FAILURE', httpStatus?: number) => {
       const action = eventFor(method, path, result, httpStatus);
       if (!action) return;
       const deleting = path === '/me' && method === 'DELETE' && result === 'SUCCESS';
-      const ipHash = createHmac('sha256', readConfig().SESSION_SECRET)
+      const ipHash = createHmac('sha256', derivedKey(this.config.values.SESSION_SECRET, 'audit-ip'))
         .update(req.ip || req.socket.remoteAddress || 'unknown')
         .digest('hex');
       await this.db.auditEvent.create({
