@@ -1,0 +1,35 @@
+name: Tag verified release
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  tag:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tag a release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          message="$(gh api "repos/$GITHUB_REPOSITORY/commits/$RELEASE_SHA" --jq '.commit.message')"
+          if [[ ! "$message" =~ ^chore\(release\):\ (v[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo 'Not a release commit.'
+            exit 0
+          fi
+          tag="${BASH_REMATCH[1]}"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "Tag $tag already exists."
+            exit 0
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$tag" -f "sha=$RELEASE_SHA"

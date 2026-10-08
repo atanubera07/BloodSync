@@ -24,4 +24,6 @@ A fresh agent reviewed the code without editing it. The findings and subsequent 
 | SEO and metadata  | Partial    | Metadata and crawler files exist; real domain and crawler results unverified.                                    |
 | Operations        | Unverified | Backup restore, monitoring, mail delivery, and incident rehearsal remain to be completed before launch.          |
 
-The final CI run and browser regression result must be recorded from GitHub Actions, not inferred from local checks.
+GitHub Actions [CI run 36](https://github.com/atanubera07/BloodSync/actions/runs/37771137985) passed all seven jobs on commit `ddea6e4`, including integration, browser checks, Docker builds, security, and CodeQL. The local browser regression also passed after the request-detail fix.
+
+Testing Library component tests, axe checks, and a coverage threshold are still missing. Package installation from this workspace repeatedly returned HTTP 503 from the npm registry, so these checks are not represented as passing. They remain required before a production launch.
