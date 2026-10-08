@@ -6,6 +6,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC } from './public';
 import type { Request } from 'express';
 
 function accessToken(req: Request): string | undefined {
@@ -17,8 +19,18 @@ function accessToken(req: Request): string | undefined {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly reflector: Reflector,
+  ) {}
   async canActivate(context: ExecutionContext) {
+    if (
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    )
+      return true;
     const req = context.switchToHttp().getRequest<Request & { user?: unknown }>();
     const token = accessToken(req);
     if (!token) throw new UnauthorizedException();

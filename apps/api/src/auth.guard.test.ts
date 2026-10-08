@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import { AdminGuard, AuthGuard } from './auth.guard';
+import { Reflector } from '@nestjs/core';
 import type { AuthService } from './auth.service';
 function context(cookies: Record<string, string> = {}, authorization?: string) {
   return {
+    getHandler: () => () => true,
+    getClass: () => class Test {},
     switchToHttp: () => ({ getRequest: () => ({ cookies, headers: { authorization } }) }),
   } as ExecutionContext;
 }
@@ -13,7 +16,9 @@ describe('auth guards', () => {
   it('rejects a missing token without invoking verification', async () => {
     const verifyAccess = vi.fn();
     await expect(
-      new AuthGuard({ verifyAccess } as unknown as AuthService).canActivate(context()),
+      new AuthGuard({ verifyAccess } as unknown as AuthService, new Reflector()).canActivate(
+        context(),
+      ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(verifyAccess).not.toHaveBeenCalled();
   });
@@ -22,12 +27,14 @@ describe('auth guards', () => {
       verifyAccess: vi.fn().mockRejectedValue(new Error(token)),
     } as unknown as AuthService;
     await expect(
-      new AuthGuard(auth).canActivate(context({ bs_access: token })),
+      new AuthGuard(auth, new Reflector()).canActivate(context({ bs_access: token })),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
   it('accepts a valid Bearer token and stores the user', async () => {
     const auth = { verifyAccess: vi.fn().mockResolvedValue(normal) } as unknown as AuthService;
-    await expect(new AuthGuard(auth).canActivate(context({}, 'Bearer valid'))).resolves.toBe(true);
+    await expect(
+      new AuthGuard(auth, new Reflector()).canActivate(context({}, 'Bearer valid')),
+    ).resolves.toBe(true);
     expect(auth.verifyAccess).toHaveBeenCalledWith('valid');
   });
   it('rejects a non-admin from an admin route', async () => {

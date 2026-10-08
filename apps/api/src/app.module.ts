@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from './prisma.service';
@@ -26,6 +27,7 @@ import { RequestExpiryService } from './request-expiry.service';
     MailService,
     AuthService,
     AuthGuard,
+    { provide: APP_GUARD, useClass: AuthGuard },
     AdminGuard,
     MatchingService,
     DonorService,
