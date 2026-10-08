@@ -1,6 +1,7 @@
 import { chromium } from '@playwright/test';
+import { existsSync } from 'node:fs';
 const browser = await chromium.launch({
-  executablePath: '/usr/bin/chromium',
+  ...(existsSync('/usr/bin/chromium') ? { executablePath: '/usr/bin/chromium' } : {}),
   headless: true,
   args: ['--no-sandbox'],
 });

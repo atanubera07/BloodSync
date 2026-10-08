@@ -14,7 +14,12 @@ describe('shared Redis limiter', () => {
     } as unknown as Redis;
     const one = rateLimit(redis);
     const two = rateLimit(redis);
-    const req = { method: 'POST', path: '/auth/register', ip: '192.0.2.1', socket: {} } as Request;
+    const req = {
+      method: 'POST',
+      path: '/v1/auth/register',
+      ip: '192.0.2.1',
+      socket: {},
+    } as Request;
     const headers: Record<string, string> = {};
     const status = vi.fn().mockReturnThis();
     const json = vi.fn();
@@ -31,5 +36,20 @@ describe('shared Redis limiter', () => {
     await two(req, res, next);
     expect(status).toHaveBeenCalledWith(429);
     expect(headers['Retry-After']).toBe('60');
+  });
+  it.each([
+    ['GET', '/v1/me/export', 5],
+    ['DELETE', '/v1/me', 3],
+  ])('limits %s %s', async (method, path, limit) => {
+    let count = 0;
+    const redis = { eval: vi.fn(async () => [++count, 60]) } as unknown as Redis;
+    const next = vi.fn();
+    const status = vi.fn().mockReturnThis();
+    const res = { status, json: vi.fn(), setHeader: vi.fn() } as unknown as Response;
+    const req = { method, path, ip: '192.0.2.2', socket: {} } as Request;
+    for (let n = 0; n < Number(limit); n++) await rateLimit(redis)(req, res, next);
+    expect(next).toHaveBeenCalledTimes(Number(limit));
+    await rateLimit(redis)(req, res, next);
+    expect(status).toHaveBeenCalledWith(429);
   });
 });

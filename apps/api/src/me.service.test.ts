@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as argon2 from 'argon2';
 import { ForbiddenException } from '@nestjs/common';
-import { MeService, PRIVACY_VERSION } from './me.service';
+import { MeService } from './me.service';
+import { PRIVACY_VERSION } from '@bloodsync/shared';
+import type { donorSaveSchema } from '@bloodsync/shared';
+import type { z } from 'zod';
 import { DonorService } from './donor.service';
 import type { PrismaService } from './prisma.service';
 import type { MatchingService } from './matching.service';
@@ -17,7 +20,10 @@ describe('privacy controls', () => {
       consentRecord: { findFirst: vi.fn().mockResolvedValue(null) },
     } as unknown as PrismaService;
     await expect(
-      new DonorService(db, {} as MatchingService).saveOwn(actor, {}),
+      new DonorService(db, {} as MatchingService).saveOwn(
+        actor,
+        {} as z.infer<typeof donorSaveSchema>,
+      ),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
   it('records versioned consent and withdrawal stops contact sharing', async () => {

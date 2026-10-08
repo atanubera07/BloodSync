@@ -20,7 +20,4 @@ start_api() {
   return 1
 }
 start_api
-python3 scripts/smoke-auth.py
-stop_api
-start_api
-python3 scripts/smoke-phase2.py
+pnpm --filter @bloodsync/api exec vitest run --config vitest.integration.config.ts

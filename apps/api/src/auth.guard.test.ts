@@ -5,10 +5,11 @@ import { AdminGuard, AuthGuard } from './auth.guard';
 import { Reflector } from '@nestjs/core';
 import type { AuthService } from './auth.service';
 function context(cookies: Record<string, string> = {}, authorization?: string) {
+  const request = { cookies, headers: { authorization } };
   return {
     getHandler: () => () => true,
     getClass: () => AuthGuard,
-    switchToHttp: () => ({ getRequest: () => ({ cookies, headers: { authorization } }) }),
+    switchToHttp: () => ({ getRequest: () => request }),
   } as unknown as ExecutionContext;
 }
 const normal = { id: 'u', role: 'USER' };
@@ -40,15 +41,19 @@ describe('auth guards', () => {
   it('rejects a non-admin from an admin route', async () => {
     const auth = { verifyAccess: vi.fn().mockResolvedValue(normal) } as unknown as AuthService;
     await expect(
-      new AdminGuard(auth).canActivate(context({ bs_access: 'token' })),
+      new AdminGuard(new AuthGuard(auth, new Reflector())).canActivate(
+        context({ bs_access: 'token' }),
+      ),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
   it('accepts an admin', async () => {
     const auth = {
       verifyAccess: vi.fn().mockResolvedValue({ id: 'a', role: 'ADMIN' }),
     } as unknown as AuthService;
-    await expect(new AdminGuard(auth).canActivate(context({ bs_access: 'token' }))).resolves.toBe(
-      true,
-    );
+    await expect(
+      new AdminGuard(new AuthGuard(auth, new Reflector())).canActivate(
+        context({ bs_access: 'token' }),
+      ),
+    ).resolves.toBe(true);
   });
 });

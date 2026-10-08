@@ -3,6 +3,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { PrismaService } from './prisma.service';
 import type { MailService } from './mail.service';
+import type { RegisterInput } from '@bloodsync/shared';
 
 describe('AuthService security boundaries', () => {
   it('rejects a role supplied at signup before writing a user', async () => {
@@ -15,7 +16,7 @@ describe('AuthService security boundaries', () => {
         password: 'long-safe-password',
         fullName: 'Test User',
         role: 'ADMIN',
-      }),
+      } as RegisterInput),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(create).not.toHaveBeenCalled();
   });

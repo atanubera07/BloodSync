@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as argon2 from 'argon2';
-import { HttpException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService, hashToken, MAX_FAILED_LOGINS } from './auth.service';
 import type { PrismaService } from './prisma.service';
 import type { MailService } from './mail.service';
@@ -81,7 +81,7 @@ describe('account lockout', () => {
     expect(user.lockedUntil).toBeInstanceOf(Date);
     await expect(
       auth.login({ email: user.email, password: 'correct-long-password' }),
-    ).rejects.toBeInstanceOf(HttpException);
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(
       (db as unknown as { $executeRaw: ReturnType<typeof vi.fn> }).$executeRaw,
     ).toHaveBeenCalledTimes(MAX_FAILED_LOGINS);

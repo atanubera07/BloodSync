@@ -1,9 +1,10 @@
 import { chromium } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
 const email = `browser-${randomBytes(4).toString('hex')}@example.test`;
 const password = 'browser-passphrase-2026';
 const browser = await chromium.launch({
-  executablePath: '/usr/bin/chromium',
+  ...(existsSync('/usr/bin/chromium') ? { executablePath: '/usr/bin/chromium' } : {}),
   headless: true,
   args: ['--no-sandbox'],
 });

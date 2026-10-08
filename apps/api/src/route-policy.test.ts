@@ -29,6 +29,8 @@ describe('route policy', () => {
       'AuthController.refresh',
       'AuthController.logout',
       'HealthController.check',
+      'HealthController.live',
+      'HealthController.ready',
     ]);
     const found: string[] = [];
     for (const controller of controllers) {
