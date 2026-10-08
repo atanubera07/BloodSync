@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AccountGate } from '../../../components/AccountGate';
 import { RequestForm } from '../../../components/RequestForm';
@@ -8,7 +9,7 @@ export default function NewRequestPage() {
     <AccountGate role="USER">
       {() => (
         <section className="content-panel">
-          <a href="/requests">← Your requests</a>
+          <Link href="/requests">← Your requests</Link>
           <h1>Create a blood request</h1>
           <p>
             If this is a medical emergency, contact your hospital or local emergency services

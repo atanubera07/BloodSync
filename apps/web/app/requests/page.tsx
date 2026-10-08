@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
 import { apiJson } from '../../lib/api';
@@ -34,9 +35,9 @@ function List() {
           <h1>Your blood requests</h1>
           <p>Only you can view and manage these requests.</p>
         </div>
-        <a className="button" href="/requests/new">
+        <Link className="button" href="/requests/new">
           Create request
-        </a>
+        </Link>
       </div>
       {loading ? (
         <p role="status">Loading requests…</p>
@@ -47,7 +48,7 @@ function List() {
         </div>
       ) : items.length === 0 ? (
         <p className="empty">
-          You have no requests yet. <a href="/requests/new">Create your first request</a>.
+          You have no requests yet. <Link href="/requests/new">Create your first request</Link>.
         </p>
       ) : (
         <>
@@ -63,7 +64,7 @@ function List() {
                   {item.city} · {item.units} unit{item.units === 1 ? '' : 's'}
                 </p>
                 <p>Expires {new Date(item.expiresAt).toLocaleString()}</p>
-                <a href={`/requests/${item.id}`}>View request and matches</a>
+                <Link href={`/requests/${item.id}`}>View request and matches</Link>
               </article>
             ))}
           </div>

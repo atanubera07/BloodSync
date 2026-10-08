@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
@@ -58,7 +59,7 @@ export default function SignUp() {
         {error && <p role="alert">{error}</p>}
       </form>
       <p>
-        Already registered? <a href="/sign-in">Sign in</a>
+        Already registered? <Link href="/sign-in">Sign in</Link>
       </p>
     </section>
   );

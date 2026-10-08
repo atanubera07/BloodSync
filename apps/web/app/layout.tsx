@@ -1,7 +1,9 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { siteUrl } from '../lib/site';
 import './style.css';
+import { HeaderNav } from '../components/HeaderNav';
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: 'BloodSync', template: '%s | BloodSync' },
@@ -21,25 +23,23 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en">
       <body>
+        <Link className="skip-link" href="#main-content">
+          Skip to content
+        </Link>
         <header>
-          <a href="/">BloodSync</a>
-          <nav aria-label="Main navigation">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/requests">Requests</a>
-            <a href="/donor/profile">Donate</a>
-            <a href="/sign-in">Sign in</a>
-          </nav>
+          <Link href="/">BloodSync</Link>
+          <HeaderNav />
         </header>
-        <main>{children}</main>
+        <main id="main-content">{children}</main>
         <footer>
           <span>BloodSync · This service does not replace emergency medical care.</span>
           <nav aria-label="Footer navigation">
-            <a href="/about">About</a>
-            <a href="/faq">FAQ</a>
-            <a href="/contact">Contact</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-            <a href="/account">My data</a>
+            <Link href="/about">About</Link>
+            <Link href="/faq">FAQ</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/account">My data</Link>
           </nav>
         </footer>
       </body>

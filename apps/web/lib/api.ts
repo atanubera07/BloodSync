@@ -1,4 +1,4 @@
-export const API_URL = '/api';
+export const API_URL = '/api/v1';
 let pendingRefresh: Promise<boolean> | null = null;
 function csrfToken() {
   if (typeof document === 'undefined') return undefined;

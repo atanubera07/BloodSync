@@ -6,6 +6,7 @@ if (!origin || (process.env.NODE_ENV === 'production' && !origin.startsWith('htt
   throw new Error('Set API_ORIGIN to the HTTPS API origin for production builds');
 }
 const config: NextConfig = {
+  output: 'standalone',
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${origin}/:path*` }];
   },

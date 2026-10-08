@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
 import { apiJson } from '../../lib/api';
+import { useResource } from '../../lib/use-resource';
 type Donor = {
   id: string;
   bloodGroup: string;
@@ -14,31 +15,22 @@ type Donor = {
   user: { fullName: string; email: string };
 };
 type Audit = { id: string; action: string; targetId: string | null; createdAt: string };
+const loadAdmin = async () => {
+  const [donors, events] = await Promise.all([
+    apiJson<Donor[]>('/admin/donors'),
+    apiJson<Audit[]>('/admin/audit'),
+  ]);
+  return { donors, events };
+};
 function AdminDashboard() {
-  const [donors, setDonors] = useState<Donor[]>([]);
-  const [events, setEvents] = useState<Audit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data, loading, error, setError, reload } = useResource(
+    loadAdmin,
+    'Could not load the review queue.',
+  );
+  const donors = data?.donors ?? [];
+  const events = data?.events ?? [];
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState('');
-  async function load() {
-    setError('');
-    try {
-      const [queue, audit] = await Promise.all([
-        apiJson<Donor[]>('/admin/donors'),
-        apiJson<Audit[]>('/admin/audit'),
-      ]);
-      setDonors(queue);
-      setEvents(audit);
-    } catch {
-      setError('Could not load the review queue.');
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => {
-    void load();
-  }, []);
   async function review(id: string, decision: 'approve' | 'reject') {
     setPending(id);
     setError('');
@@ -46,7 +38,7 @@ function AdminDashboard() {
     try {
       await apiJson(`/admin/donors/${id}/${decision}`, { method: 'POST' });
       setNotice(`Donor ${decision === 'approve' ? 'approved' : 'rejected'}.`);
-      await load();
+      reload();
     } catch {
       setError('Review failed. Reload the queue and try again.');
     } finally {
@@ -70,7 +62,7 @@ function AdminDashboard() {
       ) : error ? (
         <div role="alert">
           <p className="error">{error}</p>
-          <button onClick={() => void load()}>Retry</button>
+          <button onClick={reload}>Retry</button>
         </div>
       ) : (
         <>

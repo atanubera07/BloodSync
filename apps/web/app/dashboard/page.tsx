@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountGate } from '../../components/AccountGate';
@@ -26,16 +27,16 @@ export default function Dashboard() {
                 <article className="card">
                   <h2>Find help</h2>
                   <p>Create a request and see anonymized donor matches nearby.</p>
-                  <a href="/requests">Your requests</a>
+                  <Link href="/requests">Your requests</Link>
                 </article>
                 <article className="card">
                   <h2>Become a donor</h2>
                   <p>
                     Submit your screening profile for approval and view requests you can help with.
                   </p>
-                  <a href="/donor/profile">Donor profile</a>
+                  <Link href="/donor/profile">Donor profile</Link>
                   <br />
-                  <a href="/donor/matches">Matching requests</a>
+                  <Link href="/donor/matches">Matching requests</Link>
                 </article>
               </>
             )}
@@ -43,12 +44,12 @@ export default function Dashboard() {
               <article className="card">
                 <h2>Review donors</h2>
                 <p>Approve or reject pending profiles.</p>
-                <a href="/admin">Admin review</a>
+                <Link href="/admin">Admin review</Link>
               </article>
             )}
           </div>
           <p>
-            <a href="/account">Export or delete my data</a>
+            <Link href="/account">Export or delete my data</Link>
           </p>
           {logoutError && <p role="alert">{logoutError}</p>}
           <button className="secondary signout" onClick={() => void logout()}>

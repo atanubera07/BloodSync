@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { headers } from 'next/headers';
 import { siteUrl } from '../lib/site';
 import type { Metadata } from 'next';
@@ -30,10 +31,10 @@ export default async function Home() {
         contact details private until consent is given.
       </p>
       <div className="actions">
-        <a className="button" href="/sign-up">
+        <Link className="button" href="/sign-up">
           Create an account
-        </a>
-        <a href="/sign-in">Sign in</a>
+        </Link>
+        <Link href="/sign-in">Sign in</Link>
       </div>
       <p className="notice">
         For a medical emergency, contact local emergency services or your hospital directly.

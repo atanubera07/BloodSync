@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useState, type FormEvent } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
 import { LocationFields, optionalCoordinates } from '../../../components/LocationFields';
 import { api, apiJson } from '../../../lib/api';
+import { useResource } from '../../../lib/use-resource';
 type Profile = {
   id: string;
   bloodGroup: string;
@@ -15,34 +17,19 @@ type Profile = {
   consentToMatch: boolean;
   status: string;
 };
-const groups = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+import { bloodGroups, PRIVACY_VERSION } from '@bloodsync/shared';
+const groups = bloodGroups;
+const loadProfile = async () => {
+  const response = await api('/donors/me');
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('Unable to load your donor profile.');
+  return response.json() as Promise<Profile>;
+};
 function ProfileForm() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: profile, setData: setProfile, loading, error: loadError, reload } = useResource(loadProfile, 'Unable to load your donor profile.');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  useEffect(() => {
-    let active = true;
-    api('/donors/me')
-      .then(async (response) => {
-        if (response.status === 404) return null;
-        if (!response.ok) throw new Error();
-        return response.json() as Promise<Profile>;
-      })
-      .then((data) => {
-        if (active) setProfile(data);
-      })
-      .catch(() => {
-        if (active) setError('Unable to load your donor profile.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
@@ -60,7 +47,7 @@ function ProfileForm() {
           city: data.get('city'),
           consentToMatch: data.get('consentToMatch') === 'on',
           consent: {
-            privacyVersion: '2026-10-08',
+            privacyVersion: PRIVACY_VERSION,
             healthProcessing: data.get('healthProcessing') === 'on',
             contactSharing: data.get('contactSharing') === 'on',
           },
@@ -84,6 +71,8 @@ function ProfileForm() {
       </p>
       {loading ? (
         <p role="status">Loading profile…</p>
+      ) : loadError ? (
+        <div role="alert"><p className="error">{loadError}</p><button onClick={reload}>Retry</button></div>
       ) : (
         <>
           <p className="status-line">
@@ -148,8 +137,8 @@ function ProfileForm() {
             />
             <label className="check">
               <input name="healthProcessing" type="checkbox" required />I consent to processing my
-              screening details under the <a href="/privacy">privacy policy</a> (version
-              2026-10-08).
+              screening details under the <Link href="/privacy">privacy policy</Link> (version
+              {PRIVACY_VERSION}).
             </label>
             <label className="check">
               <input name="contactSharing" type="checkbox" required />I consent to sharing my

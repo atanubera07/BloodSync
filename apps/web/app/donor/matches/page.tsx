@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
 import { apiJson } from '../../../lib/api';
+import { useResource } from '../../../lib/use-resource';
 type Match = {
   id: string;
   bloodGroup: string;
@@ -13,31 +15,21 @@ type Match = {
   distanceKm: number | null;
   responded: boolean;
 };
+const loadMatches = () => apiJson<Match[]>('/donors/me/matches');
 function Matches() {
-  const [items, setItems] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data, setData, loading, error, setError, reload } = useResource(
+    loadMatches,
+    'Could not load matching requests.',
+  );
+  const items = data ?? [];
   const [pending, setPending] = useState('');
-  async function load() {
-    setError('');
-    try {
-      setItems(await apiJson<Match[]>('/donors/me/matches'));
-    } catch (message) {
-      setError(String(message instanceof Error ? message.message : message));
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => {
-    void load();
-  }, []);
   async function respond(id: string) {
     setPending(id);
     setError('');
     try {
       await apiJson(`/donors/me/interests/${id}`, { method: 'POST' });
-      setItems((current) =>
-        current.map((item) => (item.id === id ? { ...item, responded: true } : item)),
+      setData((current) =>
+        (current ?? []).map((item) => (item.id === id ? { ...item, responded: true } : item)),
       );
     } catch (message) {
       setError(String(message instanceof Error ? message.message : message));
@@ -57,12 +49,12 @@ function Matches() {
       ) : error ? (
         <div role="alert">
           <p className="error">{error}</p>
-          <button onClick={() => void load()}>Retry</button>
+          <button onClick={reload}>Retry</button>
         </div>
       ) : items.length === 0 ? (
         <p className="empty">
           No matching open requests right now. Check your{' '}
-          <a href="/donor/profile">profile and approval status</a>.
+          <Link href="/donor/profile">profile and approval status</Link>.
         </p>
       ) : (
         <div className="card-grid">

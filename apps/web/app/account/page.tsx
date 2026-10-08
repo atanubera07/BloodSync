@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
 import { apiJson } from '../../lib/api';
@@ -46,7 +47,7 @@ function AccountActions() {
     <section className="content-panel">
       <h1>Account and data</h1>
       <p>
-        <a href="/privacy">Read the privacy policy</a> before using these controls.
+        <Link href="/privacy">Read the privacy policy</Link> before using these controls.
       </p>
       <button type="button" disabled={busy} onClick={exportData}>
         Download my data

@@ -1,9 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AccountGate } from '../../../components/AccountGate';
 import { RequestForm, type BloodRequest } from '../../../components/RequestForm';
 import { apiJson } from '../../../lib/api';
+import { useResource } from '../../../lib/use-resource';
 type Match = { id: string; bloodGroup: string; city: string; distanceKm: number | null };
 type Interest = {
   id: string;
@@ -11,55 +13,41 @@ type Interest = {
   donor: { bloodGroup: string; city: string; user: { fullName: string; email: string } };
 };
 function Detail({ id }: { id: string }) {
-  const [request, setRequest] = useState<BloodRequest | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [interests, setInterests] = useState<Interest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
+    const [request, matches, interests] = await Promise.all([
+      apiJson<BloodRequest>(`/requests/${id}`),
+      apiJson<Match[]>(`/requests/${id}/matches`),
+      apiJson<Interest[]>(`/requests/${id}/interests`),
+    ]);
+    return { request, matches, interests };
+  }, [id]);
+  const { data, setData, loading, error: loadError, reload } = useResource(load, 'Unable to load this request. It may have been removed or belong to another account.');
+  const request = data?.request ?? null;
+  const matches = data?.matches ?? [];
+  const interests = data?.interests ?? [];
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [editing, setEditing] = useState(false);
-  async function load() {
-    setError('');
-    try {
-      const [item, matched, responded] = await Promise.all([
-        apiJson<BloodRequest>(`/requests/${id}`),
-        apiJson<Match[]>(`/requests/${id}/matches`),
-        apiJson<Interest[]>(`/requests/${id}/interests`),
-      ]);
-      setRequest(item);
-      setMatches(matched);
-      setInterests(responded);
-    } catch {
-      setError(
-        'Unable to load this request. It may have been removed or belong to another account.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => {
-    void load();
-  }, [id]);
   async function close() {
     if (!request) return;
     setError('');
     try {
       await apiJson(`/requests/${request.id}`, { method: 'DELETE' });
       setNotice('Request closed.');
-      await load();
+      reload();
     } catch {
       setError('Could not close the request. Try again.');
     }
   }
   return (
     <section>
-      <a href="/requests">← Your requests</a>
+      <Link href="/requests">← Your requests</Link>
       {loading ? (
         <p role="status">Loading request…</p>
-      ) : error ? (
+      ) : error || loadError ? (
         <div role="alert">
-          <p className="error">{error}</p>
-          <button onClick={() => void load()}>Retry</button>
+          <p className="error">{error || loadError}</p>
+          <button onClick={() => { setError(''); reload(); }}>Retry</button>
         </div>
       ) : request ? (
         <>
@@ -92,12 +80,12 @@ function Detail({ id }: { id: string }) {
               <RequestForm
                 initial={request}
                 onSaved={(updated) => {
-                  setRequest(updated);
+                  setData((current) => current ? { ...current, request: updated } : current);
                   setEditing(false);
                   setNotice(
                     'Request updated. Previous donor responses were cleared because the details changed.',
                   );
-                  void load();
+                  reload();
                 }}
               />
             </div>

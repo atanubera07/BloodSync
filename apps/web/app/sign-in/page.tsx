@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
@@ -47,10 +48,10 @@ export default function SignIn() {
         {error && <p role="alert">{error}</p>}
       </form>
       <p>
-        <a href="/forgot-password">Forgot your password?</a>
+        <Link href="/forgot-password">Forgot your password?</Link>
       </p>
       <p>
-        New here? <a href="/sign-up">Create an account</a>
+        New here? <Link href="/sign-up">Create an account</Link>
       </p>
     </section>
   );

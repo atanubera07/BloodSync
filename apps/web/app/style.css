@@ -335,3 +335,16 @@ footer nav {
     justify-content: flex-start;
   }
 }
+/* Keyboard users can jump past the site navigation. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 1000;
+  padding: 0.6rem 1rem;
+  background: white;
+  color: black;
+}
+.skip-link:focus {
+  top: 1rem;
+}

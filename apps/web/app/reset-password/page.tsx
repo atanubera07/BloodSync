@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -44,7 +45,7 @@ function ResetPasswordContent() {
         </form>
       ) : (
         <p>
-          Missing reset link. <a href="/forgot-password">Request a new link</a>.
+          Missing reset link. <Link href="/forgot-password">Request a new link</Link>.
         </p>
       )}
       {message && <p role="status">{message}</p>}

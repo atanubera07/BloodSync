@@ -15,7 +15,8 @@ export type BloodRequest = {
   status: string;
   createdAt: string;
 };
-const groups = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+import { bloodGroups } from '@bloodsync/shared';
+const groups = bloodGroups;
 function localDateTime(value: string) {
   const date = new Date(value);
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
