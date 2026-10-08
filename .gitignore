@@ -9,3 +9,6 @@ coverage/
 .local/
 .pnpm-store/
 *.tsbuildinfo
+
+__pycache__/
+*.pyc
