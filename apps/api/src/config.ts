@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 const configSchema = z.object({
-  REDIS_URL: z.url().default('redis://localhost:6379'),
+  REDIS_URL: z
+    .url()
+    .refine((url) => /^rediss?:\/\//.test(url))
+    .default('redis://localhost:6379'),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(3).default(0),
   DATABASE_URL: z.string().startsWith('postgresql://'),
   WEB_ORIGIN: z.url(),
@@ -41,7 +44,10 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
       env.SMTP_HOST === 'localhost' ||
       !env.MAIL_FROM ||
       env.MAIL_FROM.includes('@localhost') ||
-      (result.data.VERCEL && (!result.data.INTERNAL_JOB_SECRET || !result.data.CRON_SECRET)))
+      (result.data.VERCEL &&
+        (!result.data.REDIS_URL.startsWith('rediss://') ||
+          !result.data.INTERNAL_JOB_SECRET ||
+          !result.data.CRON_SECRET)))
   )
     throw new Error('Invalid production server environment');
   return result.data;

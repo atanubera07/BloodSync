@@ -6,6 +6,7 @@ const env = {
   VERCEL: '1',
   VERCEL_URL: 'bloodsync.example.vercel.app',
   DATABASE_URL: 'postgresql://synthetic:synthetic@localhost:5432/synthetic',
+  REDIS_URL: 'rediss://default:synthetic@example.upstash.io:6379',
   SESSION_SECRET: 'synthetic-session-secret-longer-than-32-characters',
   SMTP_HOST: 'smtp.example.test',
   MAIL_FROM: 'BloodSync <test@example.test>',
@@ -24,5 +25,16 @@ describe('Vercel production configuration', () => {
   it('requires internal job and cron secrets', () => {
     expect(() => readConfig({ ...env, INTERNAL_JOB_SECRET: undefined })).toThrow();
     expect(() => readConfig({ ...env, CRON_SECRET: undefined })).toThrow();
+  });
+
+  it('requires the Redis TCP TLS URL on Vercel', () => {
+    expect(() => readConfig({ ...env, REDIS_URL: 'https://example.upstash.io' })).toThrow();
+    expect(() =>
+      readConfig({ ...env, REDIS_URL: 'redis://default:secret@example.upstash.io:6379' }),
+    ).toThrow();
+    expect(
+      readConfig({ ...env, REDIS_URL: 'rediss://default:secret@example.upstash.io:6379' })
+        .REDIS_URL,
+    ).toMatch(/^rediss:\/\//);
   });
 });
