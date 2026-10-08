@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@bloodsync/shared": "workspace:*",
-    "@nestjs/common": "^11.1.0",
+    "@nestjs/common": "^12.1.2",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
     "@prisma/client": "^6.16.0",
