@@ -219,12 +219,22 @@ export class AuthService {
     if (!token) throw new UnauthorizedException();
     const old = await this.db.session.findUnique({ where: { tokenHash: hashToken(token) } });
     if (!old || old.revokedAt || old.expiresAt < new Date()) throw new UnauthorizedException();
-    const claimed = await this.db.session.updateMany({
-      where: { id: old.id, revokedAt: null },
-      data: { revokedAt: new Date() },
+    const refresh = randomBytes(32).toString('base64url');
+    const session = await this.db.$transaction(async (tx) => {
+      const claimed = await tx.session.updateMany({
+        where: { id: old.id, revokedAt: null, expiresAt: { gt: new Date() } },
+        data: { revokedAt: new Date() },
+      });
+      if (claimed.count !== 1) throw new UnauthorizedException();
+      return tx.session.create({
+        data: {
+          userId: old.userId,
+          tokenHash: hashToken(refresh),
+          expiresAt: new Date(Date.now() + REFRESH_MS),
+        },
+      });
     });
-    if (claimed.count !== 1) throw new UnauthorizedException();
-    return this.issueSession(old.userId);
+    return { access: this.accessToken(old.userId, session.id), refresh };
   }
   async logout(token?: string) {
     if (token)

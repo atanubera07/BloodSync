@@ -2,11 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type BloodRequest, type DonorProfile } from '@prisma/client';
 import {
   assessDonorEligibility,
+  DONOR_ELIGIBILITY,
   compatibleDonorGroups,
   compatibleRecipientGroups,
   type BloodGroup,
 } from '@bloodsync/shared';
 import { PrismaService } from './prisma.service';
+import { PRIVACY_VERSION } from './me.service';
 
 export const MATCH_RADIUS_KM = 50;
 type DonorRow = {
@@ -55,7 +57,14 @@ export class MatchingService {
         : Prisma.sql`NULL::double precision`;
     const rows = await this.db.$queryRaw<DonorRow[]>(Prisma.sql`
       SELECT d."id", d."bloodGroup", d."city", d."birthDate", d."weightKg", d."lastDonationAt", ${distance} AS "distanceKm"
-      FROM "DonorProfile" d WHERE d."status" = 'APPROVED' AND d."consentToMatch" = true
+      FROM "DonorProfile" d WHERE EXISTS (
+        SELECT 1 FROM "ConsentRecord" c WHERE c."userId" = d."userId"
+        AND c."withdrawnAt" IS NULL AND c."privacyVersion" = ${PRIVACY_VERSION} AND c."healthProcessing" = true AND c."contactSharing" = true
+      ) AND d."status" = 'APPROVED' AND d."consentToMatch" = true
+      AND d."birthDate" <= CURRENT_DATE - (${DONOR_ELIGIBILITY.minimumAgeYears}::int * INTERVAL '1 year')
+      AND d."birthDate" > CURRENT_DATE - ((${DONOR_ELIGIBILITY.maximumAgeYears} + 1)::int * INTERVAL '1 year')
+      AND d."weightKg" >= ${DONOR_ELIGIBILITY.minimumWeightKg}
+      AND (d."lastDonationAt" IS NULL OR d."lastDonationAt" <= CURRENT_DATE - (${DONOR_ELIGIBILITY.minimumDaysSinceDonation}::int * INTERVAL '1 day'))
       AND d."bloodGroup" IN (${Prisma.join(groups)}) AND ${near}
       ORDER BY "distanceKm" ASC NULLS LAST, d."createdAt" ASC LIMIT 100`);
     return rows

@@ -42,6 +42,7 @@ model User {
   donor DonorProfile?
   requests BloodRequest[]
   interests RequestInterest[]
+  consents ConsentRecord[]
 }
 model Session {
   id String @id @default(uuid()) @db.Uuid
@@ -107,6 +108,8 @@ model AuditEvent {
   action String @db.VarChar(80)
   targetId String? @db.Uuid
   createdAt DateTime @default(now())
+  ipHash String? @db.VarChar(64)
+  result String @default("SUCCESS") @db.VarChar(20)
   @@index([actorId, createdAt])
 }
 
@@ -120,4 +123,16 @@ model EmailToken {
   usedAt DateTime?
   createdAt DateTime @default(now())
   @@index([userId, kind, usedAt])
+}
+
+model ConsentRecord {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  privacyVersion String @db.VarChar(40)
+  healthProcessing Boolean
+  contactSharing Boolean
+  grantedAt DateTime @default(now())
+  withdrawnAt DateTime?
+  @@index([userId, grantedAt])
 }

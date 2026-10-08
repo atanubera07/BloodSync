@@ -1,6 +1,7 @@
 import { z } from 'zod';
 const configSchema = z.object({
   REDIS_URL: z.url().default('redis://localhost:6379'),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(3).default(0),
   DATABASE_URL: z.string().startsWith('postgresql://'),
   WEB_ORIGIN: z.url(),
   SESSION_SECRET: z.string().min(32),

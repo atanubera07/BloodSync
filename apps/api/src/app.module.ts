@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from './prisma.service';
@@ -14,10 +14,14 @@ import { MatchingService } from './matching.service';
 import { MailService } from './mail.service';
 import { HealthController } from './health.controller';
 import { RequestExpiryService } from './request-expiry.service';
+import { MeController } from './me.controller';
+import { MeService } from './me.service';
+import { AuditInterceptor } from './audit.interceptor';
 @Module({
   controllers: [
     AuthController,
     HealthController,
+    MeController,
     DonorController,
     RequestController,
     AdminController,
@@ -28,11 +32,13 @@ import { RequestExpiryService } from './request-expiry.service';
     AuthService,
     AuthGuard,
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     AdminGuard,
     MatchingService,
     DonorService,
     RequestService,
     RequestExpiryService,
+    MeService,
     AdminService,
   ],
 })

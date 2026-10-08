@@ -7,9 +7,9 @@ import type { AuthService } from './auth.service';
 function context(cookies: Record<string, string> = {}, authorization?: string) {
   return {
     getHandler: () => () => true,
-    getClass: () => class Test {},
+    getClass: () => AuthGuard,
     switchToHttp: () => ({ getRequest: () => ({ cookies, headers: { authorization } }) }),
-  } as ExecutionContext;
+  } as unknown as ExecutionContext;
 }
 const normal = { id: 'u', role: 'USER' };
 describe('auth guards', () => {

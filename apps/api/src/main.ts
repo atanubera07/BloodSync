@@ -6,40 +6,27 @@ import helmet from 'helmet';
 import { ApiLogger } from './logger';
 import { isAllowedMutation } from './security';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 import { BadRequestException } from '@nestjs/common';
+import Redis from 'ioredis';
+import { rateLimit } from './rate-limit';
 import type { Request, Response, NextFunction } from 'express';
 async function bootstrap() {
   const config = readConfig();
   const app = await NestFactory.create(AppModule, { bodyParser: true, logger: new ApiLogger() });
+  if (config.TRUST_PROXY_HOPS)
+    app.getHttpAdapter().getInstance().set('trust proxy', config.TRUST_PROXY_HOPS);
   app.use(helmet());
   app.use(cookieParser());
+  app.use(express.json({ limit: '64kb' }));
   app.enableCors({ origin: config.WEB_ORIGIN, credentials: true });
   app.use((req: Request, _res: Response, next: NextFunction) => {
     if (!isAllowedMutation(req, config.WEB_ORIGIN))
       return next(new BadRequestException('Invalid request origin'));
     next();
   });
-  const attempts = new Map<string, { count: number; reset: number }>();
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (
-      req.method !== 'POST' ||
-      !/^\/auth\/(register|login|refresh|verify-email|password)/.test(req.path)
-    )
-      return next();
-    if (attempts.size > 10_000) {
-      const now = Date.now();
-      for (const [key, value] of attempts) if (value.reset < now) attempts.delete(key);
-      if (attempts.size > 10_000)
-        return res.status(503).json({ message: 'Service temporarily busy' });
-    }
-    const key = `${req.socket.remoteAddress}:${req.path}`;
-    const now = Date.now();
-    const state = attempts.get(key);
-    if (!state || state.reset < now) attempts.set(key, { count: 1, reset: now + 15 * 60_000 });
-    else if (++state.count > 10)
-      return res.status(429).json({ message: 'Too many attempts. Try again later.' });
-    next();
-  });
+  const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 });
+  app.use(rateLimit(redis));
   await app.listen(config.API_PORT, '0.0.0.0');
 }
 bootstrap();

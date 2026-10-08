@@ -5,7 +5,10 @@ email='smoke-'+secrets.token_hex(4)+'@example.test'
 password='smoke-passphrase-2026'
 jar=http.cookiejar.CookieJar(); opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
 def post(path, data):
- req=urllib.request.Request(api+path,data=json.dumps(data).encode(),headers={'Content-Type':'application/json','Origin':'http://localhost:3000'})
+ headers={'Content-Type':'application/json','Origin':'http://localhost:3000'}
+ csrf=next((cookie.value for cookie in jar if cookie.name=='bs_csrf'),None)
+ if csrf: headers['X-CSRF-Token']=csrf
+ req=urllib.request.Request(api+path,data=json.dumps(data).encode(),headers=headers)
  try:
   with opener.open(req) as r:return r.status,json.load(r)
  except urllib.error.HTTPError as e:return e.code,json.load(e)
@@ -34,7 +37,8 @@ old_refresh=next(cookie.value for cookie in jar if cookie.name=='bs_refresh')
 assert post('/auth/refresh',{})[0]==200
 new_refresh=next(cookie.value for cookie in jar if cookie.name=='bs_refresh')
 assert old_refresh!=new_refresh
-old_request=urllib.request.Request(api+'/auth/refresh',data=b'{}',headers={'Content-Type':'application/json','Origin':'http://localhost:3000','Cookie':'bs_refresh='+old_refresh},method='POST')
+old_csrf=next(cookie.value for cookie in jar if cookie.name=='bs_csrf')
+old_request=urllib.request.Request(api+'/auth/refresh',data=b'{}',headers={'Content-Type':'application/json','Origin':'http://localhost:3000','X-CSRF-Token':old_csrf,'Cookie':'bs_refresh='+old_refresh+'; bs_csrf='+old_csrf},method='POST')
 try:
  urllib.request.urlopen(old_request)
  raise AssertionError('Old refresh token was accepted')
@@ -56,6 +60,7 @@ except urllib.error.HTTPError as error:
 assert post('/auth/logout',{})[0]==200
 assert get('/auth/me')[0]==401
 for _ in range(5):
- assert post('/auth/login',{'email':email,'password':'incorrect-password'})[0]==401
+ result=post('/auth/login',{'email':email,'password':'incorrect-password'})
+ assert result[0]==401, result
 assert post('/auth/login',{'email':email,'password':'new-smoke-passphrase-2026'})[0]==429
 print('PASS: registration, verification, refresh rotation/reuse, CSRF, password reset, logout, account lockout')

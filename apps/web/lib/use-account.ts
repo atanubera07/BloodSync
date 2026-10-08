@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiJson, type Account } from './api';
+import { apiJson, ApiError, type Account } from './api';
 export function useAccount(requiredRole?: 'USER' | 'ADMIN') {
   const router = useRouter();
   const [user, setUser] = useState<Account | null>(null);
@@ -18,7 +18,7 @@ export function useAccount(requiredRole?: 'USER' | 'ADMIN') {
       })
       .catch((message) => {
         if (active) {
-          if (String(message).includes('Unauthorized')) router.replace('/sign-in');
+          if (message instanceof ApiError && message.status === 401) router.replace('/sign-in');
           else setError('Unable to load your account.');
         }
       })

@@ -11,6 +11,7 @@ import { PrismaService } from './prisma.service';
 import { MatchingService } from './matching.service';
 import { requireUser, type Actor } from './actor';
 import { coarseCoordinate } from './geo';
+import { PRIVACY_VERSION } from './me.service';
 
 @Injectable()
 export class DonorService {
@@ -18,6 +19,19 @@ export class DonorService {
     private readonly db: PrismaService,
     private readonly matching: MatchingService,
   ) {}
+  private async hasContactConsent(userId: string) {
+    return Boolean(
+      await this.db.consentRecord.findFirst({
+        where: {
+          userId,
+          withdrawnAt: null,
+          privacyVersion: PRIVACY_VERSION,
+          healthProcessing: true,
+          contactSharing: true,
+        },
+      }),
+    );
+  }
   async getOwn(actor: Actor) {
     requireUser(actor);
     const profile = await this.db.donorProfile.findUnique({ where: { userId: actor.id } });
@@ -26,7 +40,27 @@ export class DonorService {
   }
   async saveOwn(actor: Actor, input: unknown) {
     requireUser(actor);
-    const parsed = donorProfileSchema.safeParse(input);
+    const details = input && typeof input === 'object' ? (input as Record<string, unknown>) : {};
+    const { consent: consentInput, ...profileInput } = details;
+    const explicit =
+      consentInput && typeof consentInput === 'object'
+        ? (consentInput as Record<string, unknown>)
+        : null;
+    const validExplicit =
+      explicit?.privacyVersion === PRIVACY_VERSION &&
+      explicit.healthProcessing === true &&
+      explicit.contactSharing === true;
+    const existing = await this.db.consentRecord.findFirst({
+      where: {
+        userId: actor.id,
+        withdrawnAt: null,
+        privacyVersion: PRIVACY_VERSION,
+        healthProcessing: true,
+      },
+      orderBy: { grantedAt: 'desc' },
+    });
+    if (!existing && !validExplicit) throw new ForbiddenException('Health data consent required');
+    const parsed = donorProfileSchema.safeParse(profileInput);
     if (!parsed.success) throw new BadRequestException('Invalid donor profile');
     const data = parsed.data;
     const birthDate = new Date(data.birthDate);
@@ -35,6 +69,20 @@ export class DonorService {
     if (reasons.length)
       throw new UnprocessableEntityException({ message: 'Donor screening did not pass', reasons });
     return this.db.$transaction(async (tx) => {
+      if (validExplicit) {
+        await tx.consentRecord.updateMany({
+          where: { userId: actor.id, withdrawnAt: null },
+          data: { withdrawnAt: new Date() },
+        });
+        await tx.consentRecord.create({
+          data: {
+            userId: actor.id,
+            privacyVersion: PRIVACY_VERSION,
+            healthProcessing: true,
+            contactSharing: true,
+          },
+        });
+      }
       await tx.requestInterest.deleteMany({ where: { userId: actor.id } });
       return tx.donorProfile.upsert({
         where: { userId: actor.id },
@@ -65,7 +113,11 @@ export class DonorService {
   }
   async matches(actor: Actor) {
     const profile = await this.getOwn(actor);
-    if (profile.status !== 'APPROVED' || !profile.consentToMatch)
+    if (
+      profile.status !== 'APPROVED' ||
+      !profile.consentToMatch ||
+      !(await this.hasContactConsent(actor.id))
+    )
       throw new ForbiddenException('Approved matching consent required');
     const requests = await this.matching.requestsForDonor(profile);
     const interests = await this.db.requestInterest.findMany({
@@ -79,7 +131,11 @@ export class DonorService {
     const requestId = z.uuid().safeParse(requestIdInput);
     if (!requestId.success) throw new BadRequestException('Invalid request ID');
     const donor = await this.getOwn(actor);
-    if (donor.status !== 'APPROVED' || !donor.consentToMatch)
+    if (
+      donor.status !== 'APPROVED' ||
+      !donor.consentToMatch ||
+      !(await this.hasContactConsent(actor.id))
+    )
       throw new ForbiddenException('Approved matching consent required');
     const request = await this.db.bloodRequest.findUnique({ where: { id: requestId.data } });
     if (!request || request.status !== 'OPEN' || request.expiresAt <= new Date())

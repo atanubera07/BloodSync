@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic local smoke-test password, not a credential"
+regexTarget = "line"
+regexes = ["password='smoke-passphrase-2026'"]

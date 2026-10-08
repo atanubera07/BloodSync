@@ -10,6 +10,7 @@ import { PrismaService } from './prisma.service';
 import { MatchingService } from './matching.service';
 import { requireUser, type Actor } from './actor';
 import { coarseCoordinate } from './geo';
+import { PRIVACY_VERSION } from './me.service';
 
 @Injectable()
 export class RequestService {
@@ -53,12 +54,16 @@ export class RequestService {
       ? { ...request, status: 'EXPIRED' }
       : request;
   }
-  async listOwn(actor: Actor) {
+  async listOwn(actor: Actor, skipInput?: string) {
     requireUser(actor);
+    const skip = skipInput === undefined ? 0 : Number(skipInput);
+    if (!Number.isInteger(skip) || skip < 0 || skip > 10000)
+      throw new BadRequestException('Invalid page');
     const requests = await this.db.bloodRequest.findMany({
       where: { ownerId: actor.id },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      skip,
+      take: 20,
     });
     return requests.map((request) => this.visibleStatus(request));
   }
@@ -109,7 +114,21 @@ export class RequestService {
   async interests(actor: Actor, idInput: string) {
     const request = await this.getOwn(actor, idInput);
     return this.db.requestInterest.findMany({
-      where: { requestId: request.id },
+      where: {
+        requestId: request.id,
+        donor: {
+          user: {
+            consents: {
+              some: {
+                withdrawnAt: null,
+                privacyVersion: PRIVACY_VERSION,
+                healthProcessing: true,
+                contactSharing: true,
+              },
+            },
+          },
+        },
+      },
       select: {
         id: true,
         consentAt: true,

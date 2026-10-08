@@ -2,23 +2,34 @@
 import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '../../lib/api';
 function ResetPasswordContent() {
   const token = useSearchParams().get('token');
   const [message, setMessage] = useState('');
+  const [pending, setPending] = useState(false);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const password = new FormData(e.currentTarget).get('password');
-    const r = await fetch(`${API}/auth/password/reset`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token, password }),
-    });
-    setMessage(
-      r.ok
-        ? 'Password updated. Sign in with your new password.'
-        : 'The link is invalid or expired. Request another.',
-    );
+    setPending(true);
+    setMessage('');
+    try {
+      const r = await api('/auth/password/reset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+      setMessage(
+        r.ok
+          ? 'Password updated. Sign in with your new password.'
+          : r.status === 400
+            ? 'The link is invalid or expired. Request another.'
+            : 'Unable to reset now. Try again.',
+      );
+    } catch {
+      setMessage('Network unavailable. Check your connection and try again.');
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <section className="form-page">
@@ -29,7 +40,7 @@ function ResetPasswordContent() {
             New password
             <input name="password" type="password" minLength={12} maxLength={128} required />
           </label>
-          <button>Update password</button>
+          <button disabled={pending}>{pending ? 'Updating…' : 'Update password'}</button>
         </form>
       ) : (
         <p>

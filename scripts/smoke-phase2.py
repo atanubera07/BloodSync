@@ -17,10 +17,14 @@ SUFFIX = secrets.token_hex(4)
 
 class Client:
     def __init__(self):
-        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        self.jar = http.cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar))
 
     def call(self, method, path, body=None, origin='http://localhost:3000'):
         headers = {} if origin is None else {'Origin': origin}
+        csrf = next((cookie.value for cookie in self.jar if cookie.name == 'bs_csrf'), None)
+        if csrf and method not in ('GET', 'HEAD'):
+            headers['X-CSRF-Token'] = csrf
         if body is not None:
             headers['Content-Type'] = 'application/json'
         request = urllib.request.Request(API + path, data=json.dumps(body).encode() if body is not None else None, headers=headers, method=method)
@@ -51,7 +55,7 @@ def account(label):
     assert client.call('POST', '/auth/register', {'email': email, 'fullName': label.title() + ' Tester', 'password': PASSWORD})[0] == 201
     token = mail_token(email, 'Verify your BloodSync email')
     assert client.call('POST', '/auth/verify-email', {'token': token})[0] == 200
-    assert client.call('POST', '/auth/login', {'email': email, 'password': PASSWORD})[0] == 200
+    check(client, 'POST', '/auth/login', 200, {'email': email, 'password': PASSWORD})
     return client, email
 
 def check(client, method, path, expected, body=None):
@@ -76,6 +80,7 @@ for method, path, body in [
     ('GET','/donors/me',None),('PUT','/donors/me',profile),('GET','/donors/me/matches',None),('POST','/donors/me/interests/550e8400-e29b-41d4-a716-446655440000',None),
     ('GET','/requests',None),('POST','/requests',request),('GET','/requests/550e8400-e29b-41d4-a716-446655440000',None),('PATCH','/requests/550e8400-e29b-41d4-a716-446655440000',{'city':'Delhi'}),('DELETE','/requests/550e8400-e29b-41d4-a716-446655440000',None),
     ('GET','/requests/550e8400-e29b-41d4-a716-446655440000/matches',None),('GET','/requests/550e8400-e29b-41d4-a716-446655440000/interests',None),
+    ('GET','/me/consent',None),('POST','/me/consent',{'privacyVersion':'2026-10-08','healthProcessing':True,'contactSharing':True}),('DELETE','/me/consent',None),('GET','/me/export',None),('DELETE','/me',{'password':PASSWORD}),
     ('GET','/admin/donors',None),('POST','/admin/donors/550e8400-e29b-41d4-a716-446655440000/approve',None),('POST','/admin/donors/550e8400-e29b-41d4-a716-446655440000/reject',None),('GET','/admin/audit',None),
 ]:
     check(anonymous, method, path, 401, body)
@@ -87,6 +92,8 @@ for method,path,body in [('GET','/donors/me',None),('PUT','/donors/me',profile),
     check(admin,method,path,403,body)
 
 # Donor identity comes from the session; a client-supplied userId is rejected.
+check(donor,'POST','/me/consent',200,{'privacyVersion':'2026-10-08','healthProcessing':True,'contactSharing':True})
+check(other_donor,'POST','/me/consent',200,{'privacyVersion':'2026-10-08','healthProcessing':True,'contactSharing':True})
 check(donor,'PUT','/donors/me',400,{**profile,'userId':patient_email})
 donor_profile=check(donor,'PUT','/donors/me',200,profile)
 check(donor,'GET','/donors/me',200)
@@ -132,4 +139,14 @@ check(donor,'POST',f'/donors/me/interests/{request_id}',404)
 # Changing a donor profile revokes approval and prior contact-sharing interests.
 check(donor,'PUT','/donors/me',200,{**profile,'city':'Howrah'})
 check(donor,'GET','/donors/me/matches',403)
+exported=check(patient,'GET','/me/export',200)
+assert exported['user']['email']==patient_email
+assert len(exported['requests'])==1
+assert 'passwordHash' not in str(exported) and 'tokenHash' not in str(exported)
+assert check(other_patient,'GET','/me/export',200)['requests']==[]
+check(other_patient,'DELETE','/me',403,{'password':'wrong'})
+check(other_patient,'DELETE','/me',200,{'password':PASSWORD})
+check(other_patient,'GET','/auth/me',401)
+check(donor,'DELETE','/me/consent',200)
+assert check(donor,'GET','/donors/me',200)['consentToMatch']==False
 print('PASS: all Phase 2 routes reject logged-out use; role and ownership boundaries, approval, matching, consent, edit and close')

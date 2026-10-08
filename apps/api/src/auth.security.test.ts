@@ -38,6 +38,11 @@ describe('refresh rotation', () => {
         }),
       },
     } as unknown as PrismaService;
+    (
+      db as unknown as {
+        $transaction: (fn: (tx: PrismaService) => Promise<unknown>) => Promise<unknown>;
+      }
+    ).$transaction = (fn) => fn(db);
     const auth = new AuthService(db, {} as MailService);
     const first = await auth.issueSession('user-id');
     const second = await auth.refresh(first.refresh);

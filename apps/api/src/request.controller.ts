@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Req,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
@@ -20,8 +21,8 @@ export class RequestController {
   @Post() create(@Req() req: AuthRequest, @Body() body: unknown) {
     return this.requests.create(req.user, body);
   }
-  @Get() list(@Req() req: AuthRequest) {
-    return this.requests.listOwn(req.user);
+  @Get() list(@Req() req: AuthRequest, @Query('skip') skip?: string) {
+    return this.requests.listOwn(req.user, skip);
   }
   @Get(':id') get(@Req() req: AuthRequest, @Param('id') id: string) {
     return this.requests.getOwn(req.user, id);

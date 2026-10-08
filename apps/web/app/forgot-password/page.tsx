@@ -1,17 +1,29 @@
 'use client';
 import { useState, type FormEvent } from 'react';
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '../../lib/api';
 export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const email = new FormData(e.currentTarget).get('email');
-    await fetch(`${API}/auth/password/forgot`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    setSent(true);
+    setPending(true);
+    setError('');
+    setSent(false);
+    try {
+      const response = await api('/auth/password/forgot', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) throw new Error();
+      setSent(true);
+    } catch {
+      setError('Unable to request a reset link. Check your connection and try again.');
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <section className="form-page">
@@ -21,8 +33,9 @@ export default function ForgotPassword() {
           Email
           <input name="email" type="email" required />
         </label>
-        <button>Send reset link</button>
+        <button disabled={pending}>{pending ? 'Sending…' : 'Send reset link'}</button>
       </form>
+      {error && <p role="alert">{error}</p>}
       {sent && <p role="status">If an account exists, we sent a reset link.</p>}
     </section>
   );

@@ -59,6 +59,11 @@ function ProfileForm() {
           lastDonationAt: data.get('lastDonationAt') || null,
           city: data.get('city'),
           consentToMatch: data.get('consentToMatch') === 'on',
+          consent: {
+            privacyVersion: '2026-10-08',
+            healthProcessing: data.get('healthProcessing') === 'on',
+            contactSharing: data.get('contactSharing') === 'on',
+          },
           ...optionalCoordinates(data),
         }),
       });
@@ -142,6 +147,15 @@ function ProfileForm() {
               initialLongitude={profile?.longitude ? Number(profile.longitude) : null}
             />
             <label className="check">
+              <input name="healthProcessing" type="checkbox" required />I consent to processing my
+              screening details under the <a href="/privacy">privacy policy</a> (version
+              2026-10-08).
+            </label>
+            <label className="check">
+              <input name="contactSharing" type="checkbox" required />I consent to sharing my
+              account name and email with a request owner if I express interest.
+            </label>
+            <label className="check">
               <input
                 name="consentToMatch"
                 type="checkbox"
@@ -155,6 +169,22 @@ function ProfileForm() {
             </p>
             <button disabled={saving}>{saving ? 'Saving…' : 'Save for review'}</button>
           </form>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await apiJson('/me/consent', { method: 'DELETE' });
+                setSuccess('Consent withdrawn. Matching and contact sharing stopped.');
+                setProfile((current) =>
+                  current ? { ...current, consentToMatch: false } : current,
+                );
+              } catch {
+                setError('Unable to withdraw consent. Try again.');
+              }
+            }}
+          >
+            Withdraw donor consent
+          </button>
           {error && (
             <p role="alert" className="error">
               {error}

@@ -2,12 +2,12 @@
 import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '../../lib/api';
 function VerifyEmailContent() {
   const token = useSearchParams().get('token');
   const [message, setMessage] = useState('');
   async function verify() {
-    const r = await fetch(`${API}/auth/verify-email`, {
+    const r = await api('/auth/verify-email', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ token }),
@@ -21,7 +21,7 @@ function VerifyEmailContent() {
   async function resend(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const email = new FormData(e.currentTarget).get('email');
-    await fetch(`${API}/auth/verify-email/request`, {
+    await api('/auth/verify-email/request', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email }),

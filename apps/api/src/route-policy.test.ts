@@ -7,6 +7,7 @@ import { AdminController } from './admin.controller';
 import { DonorController } from './donor.controller';
 import { RequestController } from './request.controller';
 import { HealthController } from './health.controller';
+import { MeController } from './me.controller';
 
 const controllers = [
   AuthController,
@@ -14,6 +15,7 @@ const controllers = [
   DonorController,
   RequestController,
   HealthController,
+  MeController,
 ];
 describe('route policy', () => {
   it('has explicit public metadata on every route that needs no user', () => {
@@ -31,7 +33,7 @@ describe('route policy', () => {
     const found: string[] = [];
     for (const controller of controllers) {
       for (const name of Object.getOwnPropertyNames(controller.prototype)) {
-        const handler = controller.prototype[name] as object;
+        const handler = (controller.prototype as unknown as Record<string, object>)[name];
         if (
           Reflect.getMetadata(PATH_METADATA, handler) === undefined ||
           Reflect.getMetadata(METHOD_METADATA, handler) === undefined

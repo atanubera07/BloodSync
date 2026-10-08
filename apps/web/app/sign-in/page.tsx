@@ -1,7 +1,7 @@
 'use client';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { api } from '../../lib/api';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -12,7 +12,7 @@ export default function SignIn() {
     setPending(true);
     const data = new FormData(event.currentTarget);
     try {
-      const response = await fetch(`${API}/auth/login`, {
+      const response = await api('/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'include',
