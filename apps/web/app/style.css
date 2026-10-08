@@ -309,3 +309,29 @@ button:disabled {
     gap: 0.65rem;
   }
 }
+
+nav {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+button,
+.button {
+  min-height: 2.75rem;
+}
+footer {
+  flex-wrap: wrap;
+  align-items: center;
+}
+footer nav {
+  gap: 1rem;
+}
+@media (max-width: 600px) {
+  nav {
+    justify-content: flex-start;
+  }
+}

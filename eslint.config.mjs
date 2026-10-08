@@ -22,6 +22,18 @@ export default tseslint.config(
     },
   },
   {
+    files: ['scripts/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+        document: 'readonly',
+      },
+    },
+  },
+  {
     files: ['apps/api/src/app.module.ts'],
     rules: { '@typescript-eslint/no-extraneous-class': 'off' },
   },

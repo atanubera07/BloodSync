@@ -1,12 +1,18 @@
 'use client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountGate } from '../../components/AccountGate';
 import { apiJson } from '../../lib/api';
 export default function Dashboard() {
   const router = useRouter();
+  const [logoutError, setLogoutError] = useState('');
   async function logout() {
-    await apiJson('/auth/logout', { method: 'POST' });
-    router.replace('/sign-in');
+    try {
+      await apiJson('/auth/logout', { method: 'POST' });
+      router.replace('/sign-in');
+    } catch {
+      setLogoutError('Could not sign out. Check your connection and try again.');
+    }
   }
   return (
     <AccountGate>
@@ -41,6 +47,10 @@ export default function Dashboard() {
               </article>
             )}
           </div>
+          <p>
+            <a href="/account">Export or delete my data</a>
+          </p>
+          {logoutError && <p role="alert">{logoutError}</p>}
           <button className="secondary signout" onClick={() => void logout()}>
             Sign out
           </button>
