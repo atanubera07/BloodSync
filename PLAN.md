@@ -1,6 +1,6 @@
 # BloodSync rebuild plan (Phase 0)
 
-Status: approved for Phase 1. This plan uses the reference repository only to identify behavior; no source files will be copied.
+Status: Phase 1 approved; Phase 2 MVP implemented and under audit. This plan uses the reference repository only to identify behavior; no source files will be copied.
 
 ## Name and destination
 
@@ -45,10 +45,10 @@ The reference has root and `backend/` copies of much of the app, including dupli
 | `/`, `/about`, `/contact`, `/privacy`, `/terms`, `/faq` | `GET /health`, `POST /contact` |
 | `/sign-up`, `/sign-in`, `/verify-email`, `/forgot-password`, `/reset-password` | `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/verify-email`, `/auth/password/forgot`, `/auth/password/reset` |
 | `/dashboard`, `/profile`, `/profile/privacy` | `GET/PATCH /me`, `GET /me/export`, `DELETE /me`, `GET/PATCH /me/consent` |
-| `/donors`, `/donor/profile`, `/donor/requests` | `GET /donors/search`, `POST/PATCH /donors/me`, `GET /donors/me/matches`, `POST /matches/:id/consent` |
-| `/requests`, `/requests/new`, `/requests/[id]` | `GET/POST /requests`, `GET/PATCH/DELETE /requests/:id`, `POST /requests/:id/close` |
+| `/donors`, `/donor/profile`, `/donor/requests` | `GET/PUT /donors/me`, `GET /donors/me/matches`, `POST /donors/me/interests/:requestId` |
+| `/requests`, `/requests/new`, `/requests/[id]` | `GET/POST /requests`, `GET/PATCH/DELETE /requests/:id`, `GET /requests/:id/matches`, `GET /requests/:id/interests` |
 | Blood bank pages (v2) | Bank registration, inventory, offers and fulfilment (v2) |
-| `/admin` | `GET /admin/review-queue`, `POST /admin/donors/:id/approve`, `GET /admin/audit` |
+| `/admin` | `GET /admin/donors`, `POST /admin/donors/:id/approve`, `POST /admin/donors/:id/reject`, `GET /admin/audit` |
 | Private alert center (v2) | Queued email and SSE endpoints (v2) |
 
 All nonpublic routes enforce authentication, role and object ownership on the API. Public search returns redacted records. Admin paths use the same server authorization regardless of UI state.
