@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express';
-import Redis from 'ioredis';
 import { createHash } from 'node:crypto';
 
 const WINDOW_SECONDS = 15 * 60;
@@ -15,7 +14,9 @@ const POLICIES = [
   { path: /^\/me\/export$/, limit: 5, name: 'data-export' },
 ];
 const script = `local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return {n, redis.call('TTL', KEYS[1])}`;
-export function rateLimit(redis: Redis) {
+export function rateLimit(redis: {
+  eval: (script: string, keyCount: number, key: string, expiry: number) => Promise<unknown>;
+}) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const path = req.path.replace(/^(?:\/api)?\/v1(?=\/)/, '');
     if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && path !== '/me/export')
