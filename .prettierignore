@@ -5,3 +5,4 @@ apps/api/src/generated
 pnpm-lock.yaml
 .pnpm-store
 .local
+results.sarif
