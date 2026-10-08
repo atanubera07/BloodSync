@@ -90,8 +90,10 @@ describe('matching boundaries', () => {
     const sql = query.mock.calls[0][0] as Prisma.Sql;
     expect(sql.sql).toContain('"withdrawnAt" IS NULL');
     expect(sql.sql).toContain('"consentToMatch" = true');
+    expect(sql.sql).toContain('d."userId" <>');
     expect(sql.values).toContain(PRIVACY_VERSION);
     expect(sql.values).toContain('O-');
+    expect(sql.values).toContain(request.ownerId);
   });
   it('queries only open, unexpired requests for a donor', async () => {
     const query = vi.fn().mockResolvedValue([]);

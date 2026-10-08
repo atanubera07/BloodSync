@@ -10,7 +10,13 @@ export const registerSchema = z.strictObject({
   password: passwordSchema,
   fullName: z.string().trim().min(2).max(100),
 });
-export const loginSchema = z.strictObject({ email: z.email(), password: z.string() });
+export const loginSchema = z.strictObject({
+  email: z
+    .email()
+    .max(254)
+    .transform((v) => v.toLowerCase()),
+  password: z.string(),
+});
 export const emailInputSchema = z.strictObject({ email: z.email().max(254).toLowerCase() });
 export const tokenInputSchema = z.strictObject({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) });
 export const resetPasswordSchema = z.strictObject({
