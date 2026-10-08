@@ -1,0 +1,5 @@
+'use client';
+import { useRouter } from 'next/navigation';
+import { AccountGate } from '../../../components/AccountGate';
+import { RequestForm } from '../../../components/RequestForm';
+export default function NewRequestPage(){const router=useRouter();return <AccountGate role="USER">{()=><section className="content-panel"><a href="/requests">← Your requests</a><h1>Create a blood request</h1><p>If this is a medical emergency, contact your hospital or local emergency services directly.</p><RequestForm onSaved={request=>router.push(`/requests/${request.id}`)}/></section>}</AccountGate>}

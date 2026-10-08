@@ -7,3 +7,4 @@ export const registerSchema = z.strictObject({
 });
 export const loginSchema = z.strictObject({ email: z.email(), password: z.string() });
 export type RegisterInput = z.infer<typeof registerSchema>;
+export * from './mvp';

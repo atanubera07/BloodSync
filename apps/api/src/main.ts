@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { readConfig } from './config';
 import helmet from 'helmet';
 import { ApiLogger } from './logger';
+import { isAllowedMutation } from './security';
 import cookieParser from 'cookie-parser';
 import { BadRequestException } from '@nestjs/common';
 import type { Request, Response, NextFunction } from 'express';
@@ -14,7 +15,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({ origin: config.WEB_ORIGIN, credentials: true });
   app.use((req: Request, _res: Response, next: NextFunction) => {
-    if (!['GET','HEAD','OPTIONS'].includes(req.method) && req.headers.origin && req.headers.origin !== config.WEB_ORIGIN) return next(new BadRequestException('Invalid request origin'));
+    if (!isAllowedMutation(req, config.WEB_ORIGIN)) return next(new BadRequestException('Invalid request origin'));
     next();
   });
   const attempts = new Map<string, { count: number; reset: number }>();

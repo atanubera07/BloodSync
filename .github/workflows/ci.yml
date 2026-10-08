@@ -3,6 +3,30 @@ on: [push, pull_request]
 jobs:
   checks:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: bloodsync
+          POSTGRES_PASSWORD: bloodsync
+          POSTGRES_DB: bloodsync
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bloodsync"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      mailpit:
+        image: axllent/mailpit:latest
+        ports: ["1025:1025", "8025:8025"]
+    env:
+      DATABASE_URL: postgresql://bloodsync:bloodsync@localhost:5432/bloodsync
+      WEB_ORIGIN: http://localhost:3000
+      SESSION_SECRET: ci-only-session-secret-longer-than-thirty-two-characters
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      MAIL_FROM: BloodSync <no-reply@localhost>
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -11,6 +35,8 @@ jobs:
         with: {node-version: 24, cache: pnpm}
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+      - run: pnpm --filter @bloodsync/api exec prisma migrate deploy
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: bash scripts/run-integration.sh

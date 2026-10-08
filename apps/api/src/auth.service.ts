@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { loginSchema, registerSchema } from '@bloodsync/shared';
 import * as argon2 from 'argon2';
@@ -8,6 +8,7 @@ import { MailService } from './mail.service';
 
 const ACCESS_MS = 15 * 60_000;
 const REFRESH_MS = 7 * 24 * 60 * 60_000;
+export const MAX_FAILED_LOGINS = 5;
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 @Injectable()
 export class AuthService {
@@ -31,8 +32,22 @@ export class AuthService {
     const data = loginSchema.safeParse(input);
     if (!data.success) throw new UnauthorizedException('Invalid email or password');
     const user = await this.db.user.findUnique({ where: { email: data.data.email.toLowerCase() } });
-    if (!user || !await argon2.verify(user.passwordHash, data.data.password)) throw new UnauthorizedException('Invalid email or password');
+    if (!user) throw new UnauthorizedException('Invalid email or password');
+    if (user.lockedUntil && user.lockedUntil > new Date()) throw new HttpException('Too many attempts. Try again later.', 429);
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await this.db.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null } });
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
+    }
+    if (!await argon2.verify(user.passwordHash, data.data.password)) {
+      await this.db.$executeRaw`UPDATE "User" SET "failedLoginAttempts" = "failedLoginAttempts" + 1,
+        "lockedUntil" = CASE WHEN "failedLoginAttempts" + 1 >= ${MAX_FAILED_LOGINS}
+          THEN NOW() + INTERVAL '15 minutes' ELSE "lockedUntil" END
+        WHERE "id" = ${user.id}::uuid`;
+      throw new UnauthorizedException('Invalid email or password');
+    }
     if (!user.emailVerifiedAt) throw new UnauthorizedException('Verify your email before signing in');
+    if (user.failedLoginAttempts || user.lockedUntil) await this.db.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null } });
     return this.issueSession(user.id);
   }
   private async sendEmailToken(userId: string, email: string, kind: 'VERIFY' | 'RESET') {
@@ -74,7 +89,7 @@ export class AuthService {
     await this.db.$transaction(async tx => {
       const claimed = await tx.emailToken.updateMany({ where: { id: record.id, usedAt: null }, data: { usedAt: new Date() } });
       if (claimed.count !== 1) throw new BadRequestException('Invalid or expired link');
-      await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+      await tx.user.update({ where: { id: record.userId }, data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null } });
       await tx.session.updateMany({ where: { userId: record.userId, revokedAt: null }, data: { revokedAt: new Date() } });
     });
     return { ok: true };

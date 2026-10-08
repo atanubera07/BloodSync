@@ -30,6 +30,16 @@ verify=token_for('Verify your BloodSync email')
 assert post('/auth/verify-email',{'token':verify})[0]==200
 assert post('/auth/verify-email',{'token':verify})[0]==400
 assert post('/auth/login',{'email':email,'password':password})[0]==200
+old_refresh=next(cookie.value for cookie in jar if cookie.name=='bs_refresh')
+assert post('/auth/refresh',{})[0]==200
+new_refresh=next(cookie.value for cookie in jar if cookie.name=='bs_refresh')
+assert old_refresh!=new_refresh
+old_request=urllib.request.Request(api+'/auth/refresh',data=b'{}',headers={'Content-Type':'application/json','Origin':'http://localhost:3000','Cookie':'bs_refresh='+old_refresh},method='POST')
+try:
+ urllib.request.urlopen(old_request)
+ raise AssertionError('Old refresh token was accepted')
+except urllib.error.HTTPError as error:
+ assert error.code==401
 assert get('/auth/me')[0]==200
 assert post('/auth/password/forgot',{'email':email})[0]==200
 reset=token_for('Reset your BloodSync password')
@@ -37,6 +47,15 @@ assert post('/auth/password/reset',{'token':reset,'password':'new-smoke-passphra
 assert get('/auth/me')[0]==401
 assert post('/auth/login',{'email':email,'password':password})[0]==401
 assert post('/auth/login',{'email':email,'password':'new-smoke-passphrase-2026'})[0]==200
+csrf_request=urllib.request.Request(api+'/auth/logout',data=b'{}',headers={'Content-Type':'application/json'},method='POST')
+try:
+ opener.open(csrf_request)
+ raise AssertionError('Cookie mutation without Origin was accepted')
+except urllib.error.HTTPError as error:
+ assert error.code==400
 assert post('/auth/logout',{})[0]==200
 assert get('/auth/me')[0]==401
-print('PASS: registration, verification, login, session revocation, password reset, logout')
+for _ in range(5):
+ assert post('/auth/login',{'email':email,'password':'incorrect-password'})[0]==401
+assert post('/auth/login',{'email':email,'password':'new-smoke-passphrase-2026'})[0]==429
+print('PASS: registration, verification, refresh rotation/reuse, CSRF, password reset, logout, account lockout')

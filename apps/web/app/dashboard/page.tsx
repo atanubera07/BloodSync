@@ -1,11 +1,6 @@
 'use client';
-import { useEffect,useState } from 'react';
 import { useRouter } from 'next/navigation';
-const API=process.env.NEXT_PUBLIC_API_URL||'http://localhost:4000';
-type User={fullName:string;email:string;role:string};
-export default function Dashboard(){
-  const router=useRouter(); const [user,setUser]=useState<User|null>(null); const [error,setError]=useState('');
-  useEffect(()=>{let active=true;fetch(`${API}/auth/me`,{credentials:'include'}).then(r=>{if(r.status===401){router.replace('/sign-in');return null;}if(!r.ok)throw new Error();return r.json();}).then(data=>{if(active&&data)setUser(data);}).catch(()=>{if(active)setError('We could not load your account.');});return()=>{active=false;};},[router]);
-  async function logout(){await fetch(`${API}/auth/logout`,{method:'POST',credentials:'include'});router.replace('/sign-in');}
-  return <section><h1>Your dashboard</h1>{error?<p role="alert">{error} <button onClick={()=>location.reload()}>Retry</button></p>:user?<><p>Welcome, {user.fullName}.</p><p>Signed in as {user.email}.</p><button onClick={logout}>Sign out</button></>:<p role="status">Loading your account…</p>}</section>;
-}
+import { AccountGate } from '../../components/AccountGate';
+import { apiJson } from '../../lib/api';
+export default function Dashboard(){const router=useRouter();async function logout(){await apiJson('/auth/logout',{method:'POST'});router.replace('/sign-in');}
+return <AccountGate>{user=><section><h1>Welcome, {user.fullName}</h1><p>Signed in as {user.email}.</p><div className="card-grid">{user.role==='USER'&&<><article className="card"><h2>Find help</h2><p>Create a request and see anonymized donor matches nearby.</p><a href="/requests">Your requests</a></article><article className="card"><h2>Become a donor</h2><p>Submit your screening profile for approval and view requests you can help with.</p><a href="/donor/profile">Donor profile</a><br/><a href="/donor/matches">Matching requests</a></article></>}{user.role==='ADMIN'&&<article className="card"><h2>Review donors</h2><p>Approve or reject pending profiles.</p><a href="/admin">Admin review</a></article>}</div><button className="secondary signout" onClick={()=>void logout()}>Sign out</button></section>}</AccountGate>}
