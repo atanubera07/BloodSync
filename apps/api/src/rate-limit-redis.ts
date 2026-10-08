@@ -5,14 +5,23 @@ import { ConfigService } from './config';
 // Vercel's bundle exposes the CommonJS package through an interop shim.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const redisModule: unknown = require('ioredis');
-function redisConstructor(value: unknown): typeof Redis {
+function redisConstructor(value: unknown, depth = 0): typeof Redis {
   if (typeof value === 'function') return value as typeof Redis;
-  if (value && typeof value === 'object') {
+  if (value && typeof value === 'object' && depth < 6) {
     const exports = value as { default?: unknown; Redis?: unknown };
-    if (typeof exports.Redis === 'function') return exports.Redis as typeof Redis;
-    if (typeof exports.default === 'function') return exports.default as typeof Redis;
+    for (const candidate of [exports.Redis, exports.default]) {
+      if (candidate) {
+        try {
+          return redisConstructor(candidate, depth + 1);
+        } catch {
+          // Try the other export shape.
+        }
+      }
+    }
   }
-  throw new Error('Unable to load Redis client');
+  throw new Error(
+    `Unable to load Redis client: ${typeof value}${value && typeof value === 'object' ? ` keys ${Object.keys(value).join(',')}` : ''}`,
+  );
 }
 const RedisClient = redisConstructor(redisModule);
 
