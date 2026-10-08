@@ -12,5 +12,24 @@ import { AdminService } from './admin.service';
 import { MatchingService } from './matching.service';
 import { MailService } from './mail.service';
 import { HealthController } from './health.controller';
-@Module({ controllers: [AuthController, HealthController, DonorController, RequestController, AdminController], providers: [PrismaService, MailService, AuthService, AuthGuard, AdminGuard, MatchingService, DonorService, RequestService, AdminService] })
+@Module({
+  controllers: [
+    AuthController,
+    HealthController,
+    DonorController,
+    RequestController,
+    AdminController,
+  ],
+  providers: [
+    PrismaService,
+    MailService,
+    AuthService,
+    AuthGuard,
+    AdminGuard,
+    MatchingService,
+    DonorService,
+    RequestService,
+    AdminService,
+  ],
+})
 export class AppModule {}

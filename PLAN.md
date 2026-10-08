@@ -8,16 +8,16 @@ Status: Phase 1 approved; Phase 2 MVP implemented and under audit. This plan use
 
 ## Reference feature map
 
-| Reference area | Rebuild behavior |
-| --- | --- |
-| Home, about, FAQ, contact | Accessible public pages with accurate service and safety information |
-| User registration, login, profile | Verified accounts, secure sessions, private profile and consent settings |
-| Donor registration and search | Eligibility screening, approval, availability, geospatial matching; no public contact details |
-| Blood requests and urgent requests | Owner-scoped requests, urgency, expiry, status and fulfilment tracking |
-| Blood bank registration and dashboard | Deferred to v2 |
-| Admin dashboard | Server-authorized approval, moderation, audit view |
-| Emergency broadcast | Deferred to v2 |
-| Location and statistics | Geospatial search and privacy-safe aggregates |
+| Reference area                        | Rebuild behavior                                                                              |
+| ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Home, about, FAQ, contact             | Accessible public pages with accurate service and safety information                          |
+| User registration, login, profile     | Verified accounts, secure sessions, private profile and consent settings                      |
+| Donor registration and search         | Eligibility screening, approval, availability, geospatial matching; no public contact details |
+| Blood requests and urgent requests    | Owner-scoped requests, urgency, expiry, status and fulfilment tracking                        |
+| Blood bank registration and dashboard | Deferred to v2                                                                                |
+| Admin dashboard                       | Server-authorized approval, moderation, audit view                                            |
+| Emergency broadcast                   | Deferred to v2                                                                                |
+| Location and statistics               | Geospatial search and privacy-safe aggregates                                                 |
 
 The reference has root and `backend/` copies of much of the app, including duplicated frontend files. Its committed production env files and the security defects listed in the prompt are specifically excluded from the rebuild.
 
@@ -40,16 +40,16 @@ The reference has root and `backend/` copies of much of the app, including dupli
 
 ## Planned routes
 
-| Web | API |
-| --- | --- |
-| `/`, `/about`, `/contact`, `/privacy`, `/terms`, `/faq` | `GET /health`, `POST /contact` |
+| Web                                                                            | API                                                                                                                                          |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`, `/about`, `/contact`, `/privacy`, `/terms`, `/faq`                        | `GET /health`, `POST /contact`                                                                                                               |
 | `/sign-up`, `/sign-in`, `/verify-email`, `/forgot-password`, `/reset-password` | `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/verify-email`, `/auth/password/forgot`, `/auth/password/reset` |
-| `/dashboard`, `/profile`, `/profile/privacy` | `GET/PATCH /me`, `GET /me/export`, `DELETE /me`, `GET/PATCH /me/consent` |
-| `/donors`, `/donor/profile`, `/donor/requests` | `GET/PUT /donors/me`, `GET /donors/me/matches`, `POST /donors/me/interests/:requestId` |
-| `/requests`, `/requests/new`, `/requests/[id]` | `GET/POST /requests`, `GET/PATCH/DELETE /requests/:id`, `GET /requests/:id/matches`, `GET /requests/:id/interests` |
-| Blood bank pages (v2) | Bank registration, inventory, offers and fulfilment (v2) |
-| `/admin` | `GET /admin/donors`, `POST /admin/donors/:id/approve`, `POST /admin/donors/:id/reject`, `GET /admin/audit` |
-| Private alert center (v2) | Queued email and SSE endpoints (v2) |
+| `/dashboard`, `/profile`, `/profile/privacy`                                   | `GET/PATCH /me`, `GET /me/export`, `DELETE /me`, `GET/PATCH /me/consent`                                                                     |
+| `/donors`, `/donor/profile`, `/donor/requests`                                 | `GET/PUT /donors/me`, `GET /donors/me/matches`, `POST /donors/me/interests/:requestId`                                                       |
+| `/requests`, `/requests/new`, `/requests/[id]`                                 | `GET/POST /requests`, `GET/PATCH/DELETE /requests/:id`, `GET /requests/:id/matches`, `GET /requests/:id/interests`                           |
+| Blood bank pages (v2)                                                          | Bank registration, inventory, offers and fulfilment (v2)                                                                                     |
+| `/admin`                                                                       | `GET /admin/donors`, `POST /admin/donors/:id/approve`, `POST /admin/donors/:id/reject`, `GET /admin/audit`                                   |
+| Private alert center (v2)                                                      | Queued email and SSE endpoints (v2)                                                                                                          |
 
 All nonpublic routes enforce authentication, role and object ownership on the API. Public search returns redacted records. Admin paths use the same server authorization regardless of UI state.
 

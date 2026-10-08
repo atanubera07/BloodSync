@@ -9,7 +9,14 @@ describe('AuthService security boundaries', () => {
     const create = vi.fn();
     const db = { user: { findUnique: vi.fn(), create } } as unknown as PrismaService;
     const auth = new AuthService(db, {} as MailService);
-    await expect(auth.register({ email: 'user@example.com', password: 'long-safe-password', fullName: 'Test User', role: 'ADMIN' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      auth.register({
+        email: 'user@example.com',
+        password: 'long-safe-password',
+        fullName: 'Test User',
+        role: 'ADMIN',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
     expect(create).not.toHaveBeenCalled();
   });
   it('rejects missing or malformed access tokens', async () => {

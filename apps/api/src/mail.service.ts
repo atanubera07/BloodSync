@@ -11,8 +11,15 @@ export class MailService {
       host: config.SMTP_HOST,
       port: config.SMTP_PORT,
       secure: config.SMTP_PORT === 465,
-      ...(config.SMTP_USER && config.SMTP_PASS ? { auth: { user: config.SMTP_USER, pass: config.SMTP_PASS } } : {}),
+      ...(config.SMTP_USER && config.SMTP_PASS
+        ? { auth: { user: config.SMTP_USER, pass: config.SMTP_PASS } }
+        : {}),
     });
-    await transport.sendMail({ from: config.MAIL_FROM, to: email, subject: kind === 'verify' ? 'Verify your BloodSync email' : 'Reset your BloodSync password', text: `Open this link to ${kind === 'verify' ? 'verify your email' : 'reset your password'}: ${url.toString()}\n\nIf you did not request this, ignore this message.` });
+    await transport.sendMail({
+      from: config.MAIL_FROM,
+      to: email,
+      subject: kind === 'verify' ? 'Verify your BloodSync email' : 'Reset your BloodSync password',
+      text: `Open this link to ${kind === 'verify' ? 'verify your email' : 'reset your password'}: ${url.toString()}\n\nIf you did not request this, ignore this message.`,
+    });
   }
 }
