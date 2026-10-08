@@ -5,26 +5,27 @@ The `bloodsync` Vercel project exists in the `atanus-projects` team. The reposit
 ## Project setup
 
 1. Connect `atanubera07/BloodSync` to the existing `bloodsync` project with the repository root as the project root. The root `vercel.json` configures `web` and `api` Services. Services and Queues are beta features; verify that they are enabled in this team before deploying.
-2. Attach a Neon PostgreSQL database to the project. Enable PostGIS with `CREATE EXTENSION IF NOT EXISTS postgis;` if Neon has not already done so. Use a direct PostgreSQL connection string for `DATABASE_URL`, since the production API build runs `prisma migrate deploy` and Prisma migrations need a direct connection. Use a fresh database for this prototype.
+2. Attach a Neon PostgreSQL database to the project. Enable PostGIS with `CREATE EXTENSION IF NOT EXISTS postgis;` if Neon has not already done so. Keep Neon's pooled `DATABASE_URL` for the running app and `DATABASE_URL_UNPOOLED` for migrations. The production API build uses the latter when present. Use a fresh database for this prototype.
 3. Attach an Upstash Redis database. Set `REDIS_URL` to its **Redis TCP TLS** URL (`rediss://...`). The REST URL and REST token alone do not work with the current rate limiter.
-4. Configure a verified SMTP sender. For Resend SMTP, use `smtp.resend.com`, port `465`, user `resend`, an API key as the password, and a `MAIL_FROM` address on a verified sender domain. Complete domain verification in the provider dashboard.
+4. Configure a verified SMTP sender. For Resend SMTP, use `smtp.resend.com`, port `465`, user `resend`, an API key with sending access as the password, and a `MAIL_FROM` address on a verified sender domain. Complete domain verification in the provider dashboard.
 5. Add the variables below in Vercel project settings for Production. Set `WEB_ORIGIN` and `SITE_URL` to the same final HTTPS site origin, with no trailing slash. Generate each secret independently with at least 32 random characters. Vercel creates `VERCEL` and `VERCEL_PROJECT_PRODUCTION_URL` itself.
 
-| Variable              | Source or value                                                                           |
-| --------------------- | ----------------------------------------------------------------------------------------- |
-| `DATABASE_URL`        | Neon direct PostgreSQL URL; PostGIS enabled                                               |
-| `REDIS_URL`           | Upstash Redis TCP TLS URL                                                                 |
-| `WEB_ORIGIN`          | Final HTTPS BloodSync web origin                                                          |
-| `SITE_URL`            | Same final HTTPS origin for canonical metadata                                            |
-| `SESSION_SECRET`      | Independent random secret, at least 32 characters                                         |
-| `INTERNAL_JOB_SECRET` | Independent random secret, at least 32 characters, shared by both Services                |
-| `CRON_SECRET`         | Independent random secret, at least 32 characters; Vercel Cron sends it as a bearer token |
-| `SMTP_HOST`           | SMTP provider host                                                                        |
-| `SMTP_PORT`           | SMTP provider port, typically `465`                                                       |
-| `SMTP_USER`           | SMTP provider username                                                                    |
-| `SMTP_PASS`           | SMTP provider password or API key                                                         |
-| `MAIL_FROM`           | Sender on the verified domain, for example `BloodSync <mail@example.com>`                 |
-| `TRUST_PROXY_HOPS`    | `0` until the actual ingress/proxy topology is verified; then set the verified count      |
+| Variable                | Source or value                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| `DATABASE_URL`          | Neon pooled PostgreSQL URL for the running app                                            |
+| `DATABASE_URL_UNPOOLED` | Neon direct PostgreSQL URL for migrations; PostGIS enabled                                |
+| `REDIS_URL`             | Upstash Redis TCP TLS URL                                                                 |
+| `WEB_ORIGIN`            | Final HTTPS BloodSync web origin                                                          |
+| `SITE_URL`              | Same final HTTPS origin for canonical metadata                                            |
+| `SESSION_SECRET`        | Independent random secret, at least 32 characters                                         |
+| `INTERNAL_JOB_SECRET`   | Independent random secret, at least 32 characters, shared by both Services                |
+| `CRON_SECRET`           | Independent random secret, at least 32 characters; Vercel Cron sends it as a bearer token |
+| `SMTP_HOST`             | SMTP provider host                                                                        |
+| `SMTP_PORT`             | SMTP provider port, typically `465`                                                       |
+| `SMTP_USER`             | SMTP provider username                                                                    |
+| `SMTP_PASS`             | SMTP provider password or API key                                                         |
+| `MAIL_FROM`             | Sender on the verified domain, for example `BloodSync <mail@example.com>`                 |
+| `TRUST_PROXY_HOPS`      | `0` until the actual ingress/proxy topology is verified; then set the verified count      |
 
 The `web` Service receives an internal API URL through a Vercel service binding. Do not set `BLOODSYNC_API_INTERNAL_URL` manually. `API_ORIGIN` is for the local/standalone Next.js rewrite, not the Vercel deployment.
 
