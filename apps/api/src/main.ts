@@ -16,12 +16,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: true, logger: new ApiLogger() });
   const config = app.get(ConfigService).values;
   app.setGlobalPrefix(config.VERCEL ? 'api/v1' : 'v1', {
-    exclude: ['health', 'health/live', 'health/ready']
-      .map((path) => ({
-        path,
-        method: RequestMethod.GET,
-      }))
-      .concat([{ path: 'internal/account-email', method: RequestMethod.POST }]),
+    exclude: [
+      ...(config.VERCEL
+        ? []
+        : ['health', 'health/live', 'health/ready'].map((path) => ({
+            path,
+            method: RequestMethod.GET,
+          }))),
+      { path: 'internal/account-email', method: RequestMethod.POST },
+    ],
   });
   installOpenApi(app);
   app.enableShutdownHooks();
