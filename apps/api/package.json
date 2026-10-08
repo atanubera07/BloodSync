@@ -15,7 +15,7 @@
     "@bloodsync/shared": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
-    "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/platform-express": "^12.1.2",
     "@prisma/client": "^6.16.0",
     "argon2": "^0.44.0",
     "bullmq": "^6.3.11",
