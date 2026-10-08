@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { connect } from 'node:tls';
+import { connect as tlsConnect } from 'node:tls';
+import { connect as tcpConnect } from 'node:net';
 import { ConfigService } from './config';
 
 function encode(parts: (string | number)[]) {
@@ -49,16 +50,16 @@ export class RateLimitRedis {
 
   constructor(config: ConfigService) {
     const url = new URL(config.values.REDIS_URL);
-    if (url.protocol !== 'rediss:') throw new Error('Redis TLS URL required');
+    if (!['rediss:', 'redis:'].includes(url.protocol)) throw new Error('Redis URL required');
+    if (config.values.NODE_ENV === 'production' && url.protocol !== 'rediss:')
+      throw new Error('Redis TLS URL required in production');
     const execute = (parts: (string | number)[]): Promise<unknown> =>
       new Promise((resolve, reject) => {
-        const socket = connect({
-          host: url.hostname,
-          port: Number(url.port || 6380),
-          servername: url.hostname,
-          rejectUnauthorized: true,
-          timeout: 5000,
-        });
+        const options = { host: url.hostname, port: Number(url.port || 6379), timeout: 5000 };
+        const socket =
+          url.protocol === 'rediss:'
+            ? tlsConnect({ ...options, servername: url.hostname, rejectUnauthorized: true })
+            : tcpConnect(options);
         let buffer = Buffer.alloc(0);
         let received = 0;
         const auth = url.password
@@ -69,7 +70,7 @@ export class RateLimitRedis {
             ]
           : [];
         const expected = auth.length ? 2 : 1;
-        socket.on('secureConnect', () =>
+        socket.on(url.protocol === 'rediss:' ? 'secureConnect' : 'connect', () =>
           socket.write((auth.length ? encode(auth) : '') + encode(parts)),
         );
         socket.on('data', (chunk: Buffer) => {
