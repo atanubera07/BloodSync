@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as argon2 from 'argon2';
+import { hashPassword } from './password';
 import { ForbiddenException } from '@nestjs/common';
 import { MeService } from './me.service';
 import { PRIVACY_VERSION } from '@bloodsync/shared';
@@ -78,7 +78,7 @@ describe('privacy controls', () => {
     );
   });
   it('requires the password and anonymizes audit records before cascading account deletion', async () => {
-    const hash = await argon2.hash('correct-password');
+    const hash = await hashPassword('correct-password');
     const updateMany = vi.fn();
     const remove = vi.fn();
     const tx = { auditEvent: { updateMany }, user: { delete: remove } };

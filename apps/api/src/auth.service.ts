@@ -9,7 +9,7 @@ import {
   resetPasswordSchema,
 } from '@bloodsync/shared';
 import type { z } from 'zod';
-import * as argon2 from 'argon2';
+import { hashPassword, verifyPassword } from './password';
 import { createHmac, createHash, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { ConfigService, readConfig } from './config';
 import { MailService } from './mail.service';
@@ -19,7 +19,7 @@ const ACCESS_MS = 15 * 60_000;
 const REFRESH_MS = 7 * 24 * 60 * 60_000;
 export const MAX_FAILED_LOGINS = 5;
 export const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
-const dummyHash = argon2.hash('not-a-real-account-password', { type: argon2.argon2id });
+const dummyHash = hashPassword('not-a-real-account-password');
 export const derivedKey = (secret: string, purpose: string) =>
   Buffer.from(hkdfSync('sha256', secret, 'BloodSync v1', purpose, 32));
 @Injectable()
@@ -43,7 +43,7 @@ export class AuthService {
         data: {
           email: data.data.email,
           fullName: data.data.fullName,
-          passwordHash: await argon2.hash(data.data.password, { type: argon2.argon2id }),
+          passwordHash: await hashPassword(data.data.password),
         },
         select: { id: true, email: true, fullName: true, role: true },
       });
@@ -66,11 +66,11 @@ export class AuthService {
     if (!data.success) throw new UnauthorizedException('Invalid email or password');
     const user = await this.db.user.findUnique({ where: { email: data.data.email.toLowerCase() } });
     if (!user) {
-      await argon2.verify(await dummyHash, data.data.password);
+      await verifyPassword(await dummyHash, data.data.password);
       throw new UnauthorizedException('Invalid email or password');
     }
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      await argon2.verify(await dummyHash, data.data.password);
+      await verifyPassword(await dummyHash, data.data.password);
       throw new UnauthorizedException('Invalid email or password');
     }
     if (user.lockedUntil && user.lockedUntil <= new Date()) {
@@ -81,7 +81,7 @@ export class AuthService {
       user.failedLoginAttempts = 0;
       user.lockedUntil = null;
     }
-    if (!(await argon2.verify(user.passwordHash, data.data.password))) {
+    if (!(await verifyPassword(user.passwordHash, data.data.password))) {
       await this.db.$executeRaw`UPDATE "User" SET "failedLoginAttempts" = "failedLoginAttempts" + 1,
         "lockedUntil" = CASE WHEN "failedLoginAttempts" + 1 >= ${MAX_FAILED_LOGINS}
           THEN NOW() + INTERVAL '15 minutes' ELSE "lockedUntil" END
@@ -133,7 +133,7 @@ export class AuthService {
     });
     if (!record || record.kind !== 'RESET' || record.usedAt || record.expiresAt < new Date())
       throw new BadRequestException('Invalid or expired link');
-    const passwordHash = await argon2.hash(password as string, { type: argon2.argon2id });
+    const passwordHash = await hashPassword(password as string);
     await this.db.$transaction(async (tx) => {
       const claimed = await tx.emailToken.updateMany({
         where: { id: record.id, usedAt: null },
