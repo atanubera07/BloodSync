@@ -22,7 +22,7 @@
     "api": {
       "root": "apps/api",
       "framework": "nestjs",
-      "buildCommand": "pnpm --filter @bloodsync/shared build && pnpm --filter @bloodsync/api db:generate && if [ \"$VERCEL_ENV\" = production ]; then pnpm --filter @bloodsync/api db:migrate:deploy; fi && pnpm --filter @bloodsync/api build"
+      "buildCommand": "pnpm --filter @bloodsync/shared build && pnpm --filter @bloodsync/api db:generate && if [ \"$VERCEL_ENV\" = production ]; then pnpm --filter @bloodsync/api db:migrate:deploy && pnpm --filter @bloodsync/api exec tsx src/bootstrap-test-admin.ts; fi && pnpm --filter @bloodsync/api build"
     }
   },
   "rewrites": [
