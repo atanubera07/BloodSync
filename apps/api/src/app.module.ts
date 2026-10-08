@@ -12,6 +12,7 @@ import { AdminService } from './admin.service';
 import { MatchingService } from './matching.service';
 import { MailService } from './mail.service';
 import { HealthController } from './health.controller';
+import { RequestExpiryService } from './request-expiry.service';
 @Module({
   controllers: [
     AuthController,
@@ -29,6 +30,7 @@ import { HealthController } from './health.controller';
     MatchingService,
     DonorService,
     RequestService,
+    RequestExpiryService,
     AdminService,
   ],
 })

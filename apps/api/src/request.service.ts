@@ -48,28 +48,26 @@ export class RequestService {
       },
     });
   }
+  private visibleStatus<T extends { status: string; expiresAt: Date }>(request: T): T {
+    return request.status === 'OPEN' && request.expiresAt <= new Date()
+      ? { ...request, status: 'EXPIRED' }
+      : request;
+  }
   async listOwn(actor: Actor) {
     requireUser(actor);
-    await this.db.bloodRequest.updateMany({
-      where: { ownerId: actor.id, status: 'OPEN', expiresAt: { lte: new Date() } },
-      data: { status: 'EXPIRED' },
-    });
-    return this.db.bloodRequest.findMany({
+    const requests = await this.db.bloodRequest.findMany({
       where: { ownerId: actor.id },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
+    return requests.map((request) => this.visibleStatus(request));
   }
   async getOwn(actor: Actor, idInput: string) {
     requireUser(actor);
     const id = this.id(idInput);
-    await this.db.bloodRequest.updateMany({
-      where: { id, ownerId: actor.id, status: 'OPEN', expiresAt: { lte: new Date() } },
-      data: { status: 'EXPIRED' },
-    });
     const request = await this.db.bloodRequest.findFirst({ where: { id, ownerId: actor.id } });
     if (!request) throw new NotFoundException('Blood request not found');
-    return request;
+    return this.visibleStatus(request);
   }
   async updateOwn(actor: Actor, idInput: string, input: unknown) {
     const request = await this.getOwn(actor, idInput);
@@ -97,7 +95,7 @@ export class RequestService {
   async closeOwn(actor: Actor, idInput: string) {
     const request = await this.getOwn(actor, idInput);
     const updated = await this.db.bloodRequest.updateMany({
-      where: { id: request.id, ownerId: actor.id, status: 'OPEN' },
+      where: { id: request.id, ownerId: actor.id, status: 'OPEN', expiresAt: { gt: new Date() } },
       data: { status: 'CLOSED' },
     });
     if (updated.count !== 1) throw new ConflictException('Request is already closed');
