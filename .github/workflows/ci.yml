@@ -48,7 +48,7 @@ jobs:
       - run: pnpm db:generate
       - run: pnpm --filter @bloodsync/api exec prisma migrate deploy
       - run: pnpm audit --audit-level high
-      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
