@@ -13,9 +13,22 @@ const configSchema = z.object({
   MAIL_FROM: z.string().min(3).default('BloodSync <no-reply@localhost>'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  VERCEL: z.string().optional(),
+  INTERNAL_JOB_SECRET: z.string().min(32).optional(),
+  CRON_SECRET: z.string().min(32).optional(),
 });
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
-  const result = configSchema.safeParse(env);
+  const effectiveEnv = {
+    ...env,
+    WEB_ORIGIN:
+      env.WEB_ORIGIN ||
+      (env.VERCEL && env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : env.VERCEL && env.VERCEL_URL
+          ? `https://${env.VERCEL_URL}`
+          : undefined),
+  };
+  const result = configSchema.safeParse(effectiveEnv);
   if (!result.success)
     throw new Error(
       'Invalid server environment: ' + result.error.issues.map((i) => i.path.join('.')).join(', '),
@@ -27,7 +40,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
       !env.SMTP_HOST ||
       env.SMTP_HOST === 'localhost' ||
       !env.MAIL_FROM ||
-      env.MAIL_FROM.includes('@localhost'))
+      env.MAIL_FROM.includes('@localhost') ||
+      (result.data.VERCEL && (!result.data.INTERNAL_JOB_SECRET || !result.data.CRON_SECRET)))
   )
     throw new Error('Invalid production server environment');
   return result.data;

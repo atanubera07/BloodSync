@@ -17,7 +17,7 @@ const POLICIES = [
 const script = `local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return {n, redis.call('TTL', KEYS[1])}`;
 export function rateLimit(redis: Redis) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const path = req.path.replace(/^\/v1(?=\/)/, '');
+    const path = req.path.replace(/^(?:\/api)?\/v1(?=\/)/, '');
     if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && path !== '/me/export')
       return next();
     const policy = POLICIES.find((entry) => entry.path.test(path));

@@ -27,7 +27,7 @@ Requirements: Node 24, pnpm 11, Docker Compose.
 4. Run `pnpm dev`; the root command loads `.env` for both apps.
 5. Open `http://localhost:3000`. Verification and reset messages appear in Mailpit at `http://localhost:8025`. API liveness and readiness are at `/health/live` and `/health/ready`; the API is versioned under `/v1`, with OpenAPI documentation at `/v1/docs`.
 
-The Compose database credentials are for local development only. The web app proxies `/api` to `API_ORIGIN` so the browser and API cookies share one host. A production build requires explicit HTTPS `API_ORIGIN` and `SITE_URL`; the API requires a non-local `SMTP_HOST` and `MAIL_FROM`. Production domain, CORS, secrets and SMTP settings must be reviewed before use. Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies between the client and API: use `1` only for a topology with one proxy, such as a dedicated Next.js proxy, and `0` for direct connections. Block direct public access to the API when trusting forwarded IP headers. The API warns at startup if production uses `0`; this is a prompt to verify the topology, not a reason to guess a hop count.
+The Compose database credentials are for local development only. The web app proxies `/api` to `API_ORIGIN` so the browser and API cookies share one host. A non-Vercel production build requires explicit HTTPS `API_ORIGIN` and `SITE_URL`; the API requires a non-local `SMTP_HOST` and `MAIL_FROM`. The Vercel configuration uses two Services, Vercel Queues for account email, and a daily Cron for request expiry; see [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md). Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies between the client and API: use `1` only for a topology with one proxy, such as a dedicated Next.js proxy, and `0` for direct connections. Block direct public access to the API when trusting forwarded IP headers. The API warns at startup if production uses `0`; this is a prompt to verify the topology, not a reason to guess a hop count.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ flowchart LR
     Shared --> API
 ```
 
-`apps/web` contains the Next.js UI and same-origin proxy. `apps/api` enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Request expiry and account email jobs run through BullMQ. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
+`apps/web` contains the Next.js UI and same-origin proxy. `apps/api` enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Locally, request expiry and account email jobs run through BullMQ. On Vercel, Cron expires requests daily and Vercel Queues dispatches account email. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
 
 ## Checks and operations
 

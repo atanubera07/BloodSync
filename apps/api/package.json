@@ -19,6 +19,7 @@
     "@nestjs/platform-express": "^11.1.0",
     "@nestjs/swagger": "^11.4.7",
     "@prisma/client": "^6.16.0",
+    "@vercel/queue": "^0.8.0",
     "argon2": "^0.44.0",
     "bullmq": "^6.3.11",
     "cookie-parser": "^1.4.7",
@@ -32,11 +33,11 @@
     "zod": "^4.1.0"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "4.1.11",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "@types/node": "^22.18.0",
     "@types/nodemailer": "^7.0.0",
+    "@vitest/coverage-v8": "4.1.11",
     "prisma": "^6.16.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",

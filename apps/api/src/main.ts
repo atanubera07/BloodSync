@@ -15,11 +15,13 @@ import type { Request, Response, NextFunction } from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: true, logger: new ApiLogger() });
   const config = app.get(ConfigService).values;
-  app.setGlobalPrefix('v1', {
-    exclude: ['health', 'health/live', 'health/ready'].map((path) => ({
-      path,
-      method: RequestMethod.GET,
-    })),
+  app.setGlobalPrefix(config.VERCEL ? 'api/v1' : 'v1', {
+    exclude: ['health', 'health/live', 'health/ready']
+      .map((path) => ({
+        path,
+        method: RequestMethod.GET,
+      }))
+      .concat([{ path: 'internal/account-email', method: RequestMethod.POST }]),
   });
   installOpenApi(app);
   app.enableShutdownHooks();
@@ -37,7 +39,7 @@ async function bootstrap() {
     next();
   });
   app.use(rateLimit(app.get(RateLimitRedis).client));
-  await app.listen(config.API_PORT, '0.0.0.0');
+  await app.listen(process.env.PORT ? Number(process.env.PORT) : config.API_PORT, '0.0.0.0');
 }
 bootstrap().catch((error) => {
   new ApiLogger().error(error);

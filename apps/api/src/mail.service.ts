@@ -14,34 +14,24 @@ export class MailService implements OnApplicationBootstrap, OnApplicationShutdow
   ) {}
 
   async onApplicationBootstrap() {
+    if (this.config.values.VERCEL) return;
     const connection = { url: this.config.values.REDIS_URL, maxRetriesPerRequest: null };
     this.queue = new Queue('account-email', {
       connection: { url: connection.url, maxRetriesPerRequest: 1, enableOfflineQueue: false },
     });
     this.worker = new Worker<{ email: string; kind: 'VERIFY' | 'RESET' }>(
       'account-email',
-      async (job) => {
-        const user = await this.db.user.findUnique({
-          where: { email: job.data.email },
-          select: { id: true, email: true, emailVerifiedAt: true },
-        });
-        if (!user || (job.data.kind === 'VERIFY' && user.emailVerifiedAt)) return;
-        const token = randomBytes(32).toString('base64url');
-        await this.db.emailToken.create({
-          data: {
-            userId: user.id,
-            kind: job.data.kind,
-            tokenHash: createHash('sha256').update(token).digest('hex'),
-            expiresAt: new Date(Date.now() + (job.data.kind === 'VERIFY' ? 86_400_000 : 1_800_000)),
-          },
-        });
-        await this.sendAction(user.email, job.data.kind === 'VERIFY' ? 'verify' : 'reset', token);
-      },
+      async (job) => this.process(job.data.email, job.data.kind),
       { connection },
     );
   }
 
   async enqueue(email: string, kind: 'VERIFY' | 'RESET') {
+    if (this.config.values.VERCEL) {
+      const { send } = await import('@vercel/queue');
+      await send('account-email', { email, kind });
+      return;
+    }
     if (!this.queue) throw new Error('Account email queue is not ready');
     await this.queue.add(
       'send',
@@ -53,6 +43,24 @@ export class MailService implements OnApplicationBootstrap, OnApplicationShutdow
   async onApplicationShutdown() {
     await this.worker?.close();
     await this.queue?.close();
+  }
+
+  async process(email: string, kind: 'VERIFY' | 'RESET') {
+    const user = await this.db.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, emailVerifiedAt: true },
+    });
+    if (!user || (kind === 'VERIFY' && user.emailVerifiedAt)) return;
+    const token = randomBytes(32).toString('base64url');
+    await this.db.emailToken.create({
+      data: {
+        userId: user.id,
+        kind,
+        tokenHash: createHash('sha256').update(token).digest('hex'),
+        expiresAt: new Date(Date.now() + (kind === 'VERIFY' ? 86_400_000 : 1_800_000)),
+      },
+    });
+    await this.sendAction(user.email, kind === 'VERIFY' ? 'verify' : 'reset', token);
   }
 
   async sendAction(email: string, kind: 'verify' | 'reset', token: string) {

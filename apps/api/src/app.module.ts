@@ -19,10 +19,13 @@ import { MeService } from './me.service';
 import { AuditInterceptor } from './audit.interceptor';
 import { RateLimitRedis } from './rate-limit-redis';
 import { ConfigService } from './config';
+import { CronController, InternalController } from './internal.controller';
 @Module({
   controllers: [
     AuthController,
     HealthController,
+    InternalController,
+    CronController,
     MeController,
     DonorController,
     RequestController,
