@@ -1,4 +1,26 @@
-export default function Home() {
+import { headers } from 'next/headers';
+import { siteUrl } from '../lib/site';
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Blood donation coordination',
+  description:
+    'Create a request, find approved donor matches, and share contact details only after consent.',
+  alternates: { canonical: '/' },
+};
+export default async function Home() {
+  const nonce = (await headers()).get('x-nonce') || undefined;
+  const structured = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'Organization', name: 'BloodSync', url: siteUrl },
+      {
+        '@type': 'WebSite',
+        name: 'BloodSync',
+        url: siteUrl,
+        description: 'Private blood donation coordination',
+      },
+    ],
+  }).replace(/</g, '\\u003c');
   return (
     <section className="hero">
       <p className="eyebrow">Blood donation coordination</p>
@@ -32,6 +54,11 @@ export default function Home() {
           </p>
         </div>
       </div>
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: structured }}
+      />
     </section>
   );
 }
