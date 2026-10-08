@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
+    "test:coverage": "vitest run src --coverage",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "admin:provision": "tsx src/provision-admin.ts"
@@ -31,6 +32,7 @@
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.11",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "@types/node": "^22.18.0",

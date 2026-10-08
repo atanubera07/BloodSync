@@ -4,6 +4,10 @@ All notable changes to BloodSync are documented here. Versions follow Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- Testing Library form and error-state tests, axe accessibility checks, and an API coverage report with CI thresholds.
+
 ## [0.3.0] - 2026-10-08
 
 ### Added

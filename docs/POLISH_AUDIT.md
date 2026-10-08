@@ -26,4 +26,6 @@ A fresh agent reviewed the code without editing it. The findings and subsequent 
 
 GitHub Actions [CI run 36](https://github.com/atanubera07/BloodSync/actions/runs/37771137985) passed all seven jobs on commit `ddea6e4`, including integration, browser checks, Docker builds, security, and CodeQL. The local browser regression also passed after the request-detail fix.
 
-Testing Library component tests, axe checks, and a coverage threshold are still missing. Package installation from this workspace repeatedly returned HTTP 503 from the npm registry, so these checks are not represented as passing. They remain required before a production launch.
+The npm registry later recovered. Testing Library now covers sign-in rate limiting and request-save failure states, and axe checks both forms. The API unit suite now reports coverage for the six core services and enforces a 50% statement, 40% branch, 60% function, and 55% line floor. Local results pass; this scope is limited to those services and forms, and it is not a substitute for a whole-app or independent accessibility audit. CI verification of these new checks is pending.
+
+A `bloodsync` project has been created in Atanu's Vercel team but has no deployment. Neon/PostGIS, Upstash Redis, SMTP, and the queue/expiry runtime adaptation are prerequisites for a working Vercel deployment. Only synthetic data is authorized. A live audit cannot start before deployment.
