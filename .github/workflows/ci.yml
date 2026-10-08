@@ -5,9 +5,62 @@ permissions:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  SITE_URL: https://bloodsync.example.invalid
+  API_ORIGIN: https://api.example.invalid
+  REDIS_URL: redis://localhost:6379
+  DATABASE_URL: postgresql://bloodsync:bloodsync@localhost:5432/bloodsync
+  WEB_ORIGIN: http://localhost:3000
+  SESSION_SECRET: ci-only-session-secret-longer-than-thirty-two-characters
+  SMTP_HOST: localhost
+  SMTP_PORT: 1025
+  MAIL_FROM: BloodSync <no-reply@localhost>
+  NODE_ENV: test
 jobs:
-  checks:
+  lint-format:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with: { version: 11.19.0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with: { version: 11.19.0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with: { version: 11.19.0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm build
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       db:
         image: postgis/postgis:16-3.4
@@ -27,17 +80,41 @@ jobs:
       mailpit:
         image: axllent/mailpit:v1.27.4
         ports: ['1025:1025', '8025:8025']
-    env:
-      SITE_URL: https://bloodsync.example.invalid
-      API_ORIGIN: https://api.example.invalid
-      REDIS_URL: redis://localhost:6379
-      DATABASE_URL: postgresql://bloodsync:bloodsync@localhost:5432/bloodsync
-      WEB_ORIGIN: http://localhost:3000
-      SESSION_SECRET: ci-only-session-secret-longer-than-thirty-two-characters
-      SMTP_HOST: localhost
-      SMTP_PORT: 1025
-      MAIL_FROM: BloodSync <no-reply@localhost>
-      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with: { version: 11.19.0 }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @bloodsync/api exec prisma migrate deploy
+      - run: pnpm --filter @bloodsync/shared build && pnpm --filter @bloodsync/api build
+      - run: bash scripts/run-integration.sh
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Browser journeys and accessibility smoke
+        run: |
+          set -euo pipefail
+          WEB_ORIGIN=http://localhost:3003 node apps/api/dist/apps/api/src/main.js > "$RUNNER_TEMP/api-browser.log" 2>&1 & api_pid=$!
+          NODE_ENV=development API_ORIGIN=http://localhost:4000 pnpm --filter @bloodsync/web exec next dev -p 3003 > "$RUNNER_TEMP/web-browser.log" 2>&1 & web_pid=$!
+          trap 'kill "$api_pid" "$web_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do curl -fsS http://localhost:4000/health/ready >/dev/null && break; sleep 1; done
+          for attempt in {1..60}; do curl -fsS http://localhost:3003/ >/dev/null && break; sleep 1; done
+          WEB_CHECK_URL=http://localhost:3003 node scripts/browser-check.mjs
+          node scripts/browser-auth-check.mjs
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: docker build -f apps/api/Dockerfile -t bloodsync-api:ci .
+      - run: docker run --rm --entrypoint node bloodsync-api:ci -e 'new (require("@prisma/client").PrismaClient)()'
+      - run: docker build --build-arg API_ORIGIN=https://api.example.invalid --build-arg SITE_URL=https://bloodsync.example.invalid -f apps/web/Dockerfile -t bloodsync-web:ci .
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with: { fetch-depth: 0 }
@@ -46,13 +123,17 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm db:generate
-      - run: pnpm --filter @bloodsync/api exec prisma migrate deploy
       - run: pnpm audit --audit-level high
       - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
-      - run: pnpm lint
-      - run: pnpm format:check
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
-      - run: bash scripts/run-integration.sh
+
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: github/codeql-action/init@v3
+        with: { languages: javascript-typescript }
+      - uses: github/codeql-action/analyze@v3
