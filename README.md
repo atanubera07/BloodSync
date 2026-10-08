@@ -6,7 +6,7 @@ BloodSync is a fresh, open-source blood donation coordination platform by **Atan
 
 Phase 2 MVP is implemented and locally verified; the product is not ready for real-world use. Patients can create, edit, close and inspect their own requests. Donors can submit screening profiles, await admin approval, see redacted compatible requests, and explicitly share interest. Request owners can see an interested donor's name and account email after that choice. Administrators can review pending donors and audit decisions. The API stores Argon2id password hashes, rotates hashed refresh sessions, checks cookie mutation origins and locks accounts after repeated failed logins.
 
-Do not use this version with real patient or donor data. Independent security and clinical workflow reviews are recommended before real-world use. See `PHASE2_AUDIT.md` for outstanding launch requirements.
+Do not use this version with real patient or donor data. Independent security and clinical workflow reviews are recommended before real-world use. See `docs/PHASE2_AUDIT.md` for outstanding launch requirements.
 
 ## Local development
 
@@ -28,7 +28,7 @@ The default Docker database password is for local development only. Set `NEXT_PU
 
 ## Donor screening defaults
 
-Minimum age 18, maximum age 65, minimum weight **45 kg**, minimum gap **90 days**, configured in `packages/shared/src/eligibility.ts`. The owner identified 45 kg in the reference donor guidance; its README says 50 kg. The discrepancy is documented in `PLAN.md`. These values require local clinical review and are never medical clearance.
+Minimum age 18, maximum age 65, minimum weight **45 kg**, minimum gap **90 days**, configured in `packages/shared/src/eligibility.ts`. The owner identified 45 kg in the reference donor guidance; its README says 50 kg. The discrepancy is documented in `docs/PLAN.md`. These values require local clinical review and are never medical clearance.
 
 ## License
 
@@ -36,7 +36,7 @@ MIT © 2026 Atanu Bera. See `LICENSE`.
 
 To provision an administrator, first verify the account, then run `pnpm --filter @bloodsync/api admin:provision person@example.com` from a trusted operator shell. There is no public admin signup path.
 
-Run `bash scripts/run-integration.sh` after starting PostGIS and Mailpit and applying migrations to repeat the auth and Phase 2 route tests. See `PHASE1_AUDIT.md` and `PHASE2_AUDIT.md` for verification details and remaining work.
+Run `bash scripts/run-integration.sh` after starting PostGIS and Mailpit and applying migrations to repeat the auth and Phase 2 route tests. See `docs/PHASE1_AUDIT.md` and `docs/PHASE2_AUDIT.md` for verification details and remaining work.
 
 ## Duplicate email response
 
