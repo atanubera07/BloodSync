@@ -26,7 +26,13 @@ const loadProfile = async () => {
   return response.json() as Promise<Profile>;
 };
 function ProfileForm() {
-  const { data: profile, setData: setProfile, loading, error: loadError, reload } = useResource(loadProfile, 'Unable to load your donor profile.');
+  const {
+    data: profile,
+    setData: setProfile,
+    loading,
+    error: loadError,
+    reload,
+  } = useResource(loadProfile, 'Unable to load your donor profile.');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -72,7 +78,10 @@ function ProfileForm() {
       {loading ? (
         <p role="status">Loading profile…</p>
       ) : loadError ? (
-        <div role="alert"><p className="error">{loadError}</p><button onClick={reload}>Retry</button></div>
+        <div role="alert">
+          <p className="error">{loadError}</p>
+          <button onClick={reload}>Retry</button>
+        </div>
       ) : (
         <>
           <p className="status-line">

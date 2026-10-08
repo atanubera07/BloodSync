@@ -41,7 +41,32 @@ try {
     throw new Error('HttpOnly access cookie missing');
   if (!cookies.some((cookie) => cookie.name === 'bs_csrf' && !cookie.httpOnly))
     throw new Error('CSRF cookie missing');
-  console.log('PASS: browser signup, verification, sign-in, dashboard and cookies');
+  await page.route('**/api/v1/requests/*/matches', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: '{"message":"Unavailable"}',
+    }),
+  );
+  await page.goto('http://localhost:3003/requests/new');
+  await page.getByLabel('Blood group needed').selectOption('A+');
+  await page.getByLabel('Units needed').fill('2');
+  await page
+    .getByLabel('Expires at')
+    .fill(new Date(Date.now() + 172_800_000).toISOString().slice(0, 16));
+  await page.getByLabel('Hospital or care center').fill('Synthetic Hospital');
+  await page.getByLabel('City').fill('Kolkata');
+  await page.getByRole('button', { name: 'Create request' }).click();
+  await page.waitForURL('**/requests/*');
+  await page.getByRole('heading', { name: 'Synthetic Hospital' }).waitFor();
+  await page.getByText('Unable to load matches.').waitFor();
+  await page.getByRole('button', { name: 'Close request' }).waitFor();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Close request' }).click();
+  await page.getByText('Request closed.').waitFor();
+  console.log(
+    'PASS: browser signup, verification, request form, secondary error, close and cookies',
+  );
 } finally {
   await browser.close();
 }

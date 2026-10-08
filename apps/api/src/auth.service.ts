@@ -13,6 +13,7 @@ import * as argon2 from 'argon2';
 import { createHmac, createHash, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { ConfigService, readConfig } from './config';
 import { MailService } from './mail.service';
+import { ApiLogger } from './logger';
 
 const ACCESS_MS = 15 * 60_000;
 const REFRESH_MS = 7 * 24 * 60 * 60_000;
@@ -51,7 +52,13 @@ export class AuthService {
         throw new BadRequestException('Unable to create account with these details');
       throw error;
     }
-    await this.mail.enqueue(user.email, 'VERIFY');
+    try {
+      await this.mail.enqueue(user.email, 'VERIFY');
+    } catch {
+      new ApiLogger().warn(
+        'Verification email could not be queued after registration; resend is available',
+      );
+    }
     return user;
   }
   async login(input: z.infer<typeof loginSchema>) {

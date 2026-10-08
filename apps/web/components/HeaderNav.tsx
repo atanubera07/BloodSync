@@ -6,15 +6,20 @@ import { apiJson, type Account } from '../lib/api';
 
 export function HeaderNav() {
   const [account, setAccount] = useState<Account | null>(null);
+  const [ready, setReady] = useState(false);
   const pathname = usePathname();
   useEffect(() => {
     let active = true;
+    setReady(false);
     apiJson<Account>('/auth/me')
       .then((value) => {
         if (active) setAccount(value);
       })
       .catch(() => {
         if (active) setAccount(null);
+      })
+      .finally(() => {
+        if (active) setReady(true);
       });
     return () => {
       active = false;
@@ -22,7 +27,9 @@ export function HeaderNav() {
   }, [pathname]);
   return (
     <nav aria-label="Main navigation">
-      {account ? (
+      {!ready ? (
+        <span aria-live="polite">Loading navigation…</span>
+      ) : account ? (
         <>
           <Link href="/dashboard">Dashboard</Link>
           {account.role === 'ADMIN' ? (

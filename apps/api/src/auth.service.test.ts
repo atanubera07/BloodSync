@@ -6,6 +6,32 @@ import type { MailService } from './mail.service';
 import type { RegisterInput } from '@bloodsync/shared';
 
 describe('AuthService security boundaries', () => {
+  it('returns a created account when verification queue is unavailable so resend remains possible', async () => {
+    const created = {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      email: 'synthetic@example.test',
+      fullName: 'Synthetic User',
+      role: 'USER',
+    };
+    const db = {
+      user: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(created),
+      },
+    } as unknown as PrismaService;
+    const mail = {
+      enqueue: vi.fn().mockRejectedValue(new Error('Redis unavailable')),
+    } as unknown as MailService;
+    const auth = new AuthService(db, mail);
+    await expect(
+      auth.register({
+        email: created.email,
+        password: 'synthetic-long-password',
+        fullName: created.fullName,
+      }),
+    ).resolves.toEqual(created);
+    expect(mail.enqueue).toHaveBeenCalledWith(created.email, 'VERIFY');
+  });
   it('rejects a role supplied at signup before writing a user', async () => {
     const create = vi.fn();
     const db = { user: { findUnique: vi.fn(), create } } as unknown as PrismaService;

@@ -13,30 +13,57 @@ type Interest = {
   donor: { bloodGroup: string; city: string; user: { fullName: string; email: string } };
 };
 function Detail({ id }: { id: string }) {
-  const load = useCallback(async () => {
-    const [request, matches, interests] = await Promise.all([
-      apiJson<BloodRequest>(`/requests/${id}`),
-      apiJson<Match[]>(`/requests/${id}/matches`),
-      apiJson<Interest[]>(`/requests/${id}/interests`),
-    ]);
-    return { request, matches, interests };
-  }, [id]);
-  const { data, setData, loading, error: loadError, reload } = useResource(load, 'Unable to load this request. It may have been removed or belong to another account.');
-  const request = data?.request ?? null;
-  const matches = data?.matches ?? [];
-  const interests = data?.interests ?? [];
+  const loadRequest = useCallback(() => apiJson<BloodRequest>(`/requests/${id}`), [id]);
+  const loadMatches = useCallback(() => apiJson<Match[]>(`/requests/${id}/matches`), [id]);
+  const loadInterests = useCallback(() => apiJson<Interest[]>(`/requests/${id}/interests`), [id]);
+  const {
+    data: request,
+    setData: setRequest,
+    loading,
+    error: loadError,
+    reload: reloadRequest,
+  } = useResource(
+    loadRequest,
+    'Unable to load this request. It may have been removed or belong to another account.',
+  );
+  const {
+    data: matchData,
+    loading: matchesLoading,
+    error: matchesError,
+    reload: reloadMatches,
+  } = useResource(loadMatches, 'Unable to load matches.');
+  const {
+    data: interestData,
+    loading: interestsLoading,
+    error: interestsError,
+    reload: reloadInterests,
+  } = useResource(loadInterests, 'Unable to load donor responses.');
+  const matches = matchData ?? [];
+  const interests = interestData ?? [];
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [editing, setEditing] = useState(false);
+  const [closing, setClosing] = useState(false);
   async function close() {
-    if (!request) return;
+    if (
+      !request ||
+      closing ||
+      !window.confirm('Close this request? Donors will no longer be able to respond.')
+    )
+      return;
+    setClosing(true);
     setError('');
     try {
       await apiJson(`/requests/${request.id}`, { method: 'DELETE' });
+      setRequest((current) => (current ? { ...current, status: 'CLOSED' } : current));
       setNotice('Request closed.');
-      reload();
+      reloadRequest();
+      reloadMatches();
+      reloadInterests();
     } catch {
       setError('Could not close the request. Try again.');
+    } finally {
+      setClosing(false);
     }
   }
   return (
@@ -44,10 +71,10 @@ function Detail({ id }: { id: string }) {
       <Link href="/requests">← Your requests</Link>
       {loading ? (
         <p role="status">Loading request…</p>
-      ) : error || loadError ? (
+      ) : loadError ? (
         <div role="alert">
-          <p className="error">{error || loadError}</p>
-          <button onClick={() => { setError(''); reload(); }}>Retry</button>
+          <p className="error">{loadError}</p>
+          <button onClick={reloadRequest}>Retry</button>
         </div>
       ) : request ? (
         <>
@@ -64,11 +91,18 @@ function Detail({ id }: { id: string }) {
                 <button className="secondary" onClick={() => setEditing(!editing)}>
                   {editing ? 'Cancel edit' : 'Edit request'}
                 </button>
-                <button onClick={() => void close()}>Close request</button>
+                <button disabled={closing} onClick={() => void close()}>
+                  {closing ? 'Closing…' : 'Close request'}
+                </button>
               </div>
             )}
           </div>
           <p>Expires {new Date(request.expiresAt).toLocaleString()}</p>
+          {error && (
+            <p role="alert" className="error">
+              {error}
+            </p>
+          )}
           {notice && (
             <p role="status" className="success">
               {notice}
@@ -80,12 +114,14 @@ function Detail({ id }: { id: string }) {
               <RequestForm
                 initial={request}
                 onSaved={(updated) => {
-                  setData((current) => current ? { ...current, request: updated } : current);
+                  setRequest(updated);
                   setEditing(false);
                   setNotice(
                     'Request updated. Previous donor responses were cleared because the details changed.',
                   );
-                  reload();
+                  reloadRequest();
+                  reloadMatches();
+                  reloadInterests();
                 }}
               />
             </div>
@@ -97,7 +133,14 @@ function Detail({ id }: { id: string }) {
                 These approved donors opted into anonymous matching. Contact details appear only
                 after they respond.
               </p>
-              {matches.length === 0 ? (
+              {matchesLoading ? (
+                <p role="status">Loading matches…</p>
+              ) : matchesError ? (
+                <div role="alert">
+                  <p>{matchesError}</p>
+                  <button onClick={reloadMatches}>Retry matches</button>
+                </div>
+              ) : matches.length === 0 ? (
                 <p className="empty">No matching donors found yet.</p>
               ) : (
                 <ul className="simple-list">
@@ -112,7 +155,14 @@ function Detail({ id }: { id: string }) {
             </section>
             <section>
               <h2>Donors who responded</h2>
-              {interests.length === 0 ? (
+              {interestsLoading ? (
+                <p role="status">Loading donor responses…</p>
+              ) : interestsError ? (
+                <div role="alert">
+                  <p>{interestsError}</p>
+                  <button onClick={reloadInterests}>Retry responses</button>
+                </div>
+              ) : interests.length === 0 ? (
                 <p className="empty">No donor has responded yet.</p>
               ) : (
                 <ul className="simple-list">

@@ -15,7 +15,9 @@ export class MailService implements OnApplicationBootstrap, OnApplicationShutdow
 
   async onApplicationBootstrap() {
     const connection = { url: this.config.values.REDIS_URL, maxRetriesPerRequest: null };
-    this.queue = new Queue('account-email', { connection });
+    this.queue = new Queue('account-email', {
+      connection: { url: connection.url, maxRetriesPerRequest: 1, enableOfflineQueue: false },
+    });
     this.worker = new Worker<{ email: string; kind: 'VERIFY' | 'RESET' }>(
       'account-email',
       async (job) => {
