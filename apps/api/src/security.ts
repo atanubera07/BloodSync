@@ -6,7 +6,8 @@ export function isAllowedMutation(
   req: Pick<Request, 'method' | 'headers' | 'cookies'>,
   webOrigin: string,
 ): boolean {
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return true;
+  const method = (req.method || '').toUpperCase();
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return true;
   const origin = req.headers.origin;
   const hasSessionCookie = Boolean(req.cookies?.bs_access || req.cookies?.bs_refresh);
   if (!hasSessionCookie) return origin === undefined || origin === webOrigin;
@@ -16,9 +17,11 @@ export function isAllowedMutation(
   if (
     typeof cookie !== 'string' ||
     typeof header !== 'string' ||
-    cookie.length < 32 ||
-    cookie.length !== header.length
+    cookie.length < 32
   )
     return false;
-  return timingSafeEqual(Buffer.from(cookie), Buffer.from(header));
+  const bufCookie = Buffer.from(cookie);
+  const bufHeader = Buffer.from(header);
+  if (bufCookie.length !== bufHeader.length) return false;
+  return timingSafeEqual(bufCookie, bufHeader);
 }
