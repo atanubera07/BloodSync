@@ -14,12 +14,7 @@ export function isAllowedMutation(
   if (origin !== webOrigin) return false;
   const cookie = req.cookies?.bs_csrf;
   const header = req.headers['x-csrf-token'];
-  if (
-    typeof cookie !== 'string' ||
-    typeof header !== 'string' ||
-    cookie.length < 32
-  )
-    return false;
+  if (typeof cookie !== 'string' || typeof header !== 'string' || cookie.length < 32) return false;
   const bufCookie = Buffer.from(cookie);
   const bufHeader = Buffer.from(header);
   if (bufCookie.length !== bufHeader.length) return false;
