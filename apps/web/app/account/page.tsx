@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
+import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { apiJson } from '../../lib/api';
 function AccountActions() {
   const [password, setPassword] = useState('');
@@ -74,5 +75,13 @@ function AccountActions() {
   );
 }
 export default function AccountPage() {
-  return <AccountGate>{() => <AccountActions />}</AccountGate>;
+  return (
+    <AccountGate>
+      {(user) => (
+        <WorkspaceFrame role={user.role} active="/account">
+          <AccountActions />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

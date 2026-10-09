@@ -32,35 +32,46 @@ export default function SignUp() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Create an account</h1>
-      <form onSubmit={submit}>
-        <label>
-          Full name
-          <input name="fullName" autoComplete="name" minLength={2} maxLength={100} required />
-        </label>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="email" required />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            required
-          />
-          <small>Use at least 12 characters.</small>
-        </label>
-        <button disabled={pending}>{pending ? 'Creating…' : 'Create account'}</button>
-        {error && <p role="alert">{error}</p>}
-      </form>
-      <p>
-        Already registered? <Link href="/sign-in">Sign in</Link>
-      </p>
-    </section>
+    <div className="auth-layout">
+      <section className="form-page">
+        <span className="eyebrow">Join BloodSync</span>
+        <h1>Start with a simple step.</h1>
+        <p>Create an account to request help or become a potential donor.</p>
+        <form onSubmit={submit}>
+          <label>
+            Full name
+            <input name="fullName" autoComplete="name" minLength={2} maxLength={100} required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <label>
+            Password
+            <input
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+            <small>Use at least 12 characters.</small>
+          </label>
+          <button disabled={pending}>{pending ? 'Creating…' : 'Create account'}</button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+        <p>
+          Already registered? <Link href="/sign-in">Sign in</Link>
+        </p>
+      </section>
+      <aside className="auth-aside" aria-label="About BloodSync">
+        <div className="auth-aside-content">
+          <span className="eyebrow">Made for meaningful moments</span>
+          <h2>Your choice can make a difference.</h2>
+          <p>We make it easier to offer help while keeping sensitive details in the right hands.</p>
+        </div>
+      </aside>
+    </div>
   );
 }

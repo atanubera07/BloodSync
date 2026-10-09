@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
+import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { apiJson } from '../../lib/api';
 import type { BloodRequest } from '../../components/RequestForm';
 function List() {
@@ -79,5 +80,13 @@ function List() {
   );
 }
 export default function RequestsPage() {
-  return <AccountGate role="USER">{() => <List />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/requests">
+          <List />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

@@ -33,26 +33,37 @@ export default function SignIn() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Sign in</h1>
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="email" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" autoComplete="current-password" required />
-        </label>
-        <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
-        {error && <p role="alert">{error}</p>}
-      </form>
-      <p>
-        <Link href="/forgot-password">Forgot your password?</Link>
-      </p>
-      <p>
-        New here? <Link href="/sign-up">Create an account</Link>
-      </p>
-    </section>
+    <div className="auth-layout">
+      <section className="form-page">
+        <span className="eyebrow">Welcome back</span>
+        <h1>Good to see you again.</h1>
+        <p>Sign in to manage your requests, donor profile, and account.</p>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autoComplete="current-password" required />
+          </label>
+          <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+        <p>
+          <Link href="/forgot-password">Forgot your password?</Link>
+        </p>
+        <p>
+          New here? <Link href="/sign-up">Create an account</Link>
+        </p>
+      </section>
+      <aside className="auth-aside" aria-label="About BloodSync">
+        <div className="auth-aside-content">
+          <span className="eyebrow">A little hope goes a long way</span>
+          <h2>Care is stronger when we connect.</h2>
+          <p>Private requests. Approved donors. A clearer path to helping someone.</p>
+        </div>
+      </aside>
+    </div>
   );
 }

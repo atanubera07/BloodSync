@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { LocationFields, optionalCoordinates } from '../../../components/LocationFields';
 import { api, apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
@@ -199,5 +200,13 @@ function ProfileForm() {
   );
 }
 export default function DonorProfilePage() {
-  return <AccountGate role="USER">{() => <ProfileForm />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/profile">
+          <ProfileForm />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

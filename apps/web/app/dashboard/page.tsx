@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountGate } from '../../components/AccountGate';
+import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { apiJson } from '../../lib/api';
+
 export default function Dashboard() {
   const router = useRouter();
   const [logoutError, setLogoutError] = useState('');
@@ -18,44 +20,97 @@ export default function Dashboard() {
   return (
     <AccountGate>
       {(user) => (
-        <section>
-          <h1>Welcome, {user.fullName}</h1>
-          <p>Signed in as {user.email}.</p>
-          <div className="card-grid">
-            {user.role === 'USER' && (
-              <>
-                <article className="card">
-                  <h2>Find help</h2>
-                  <p>Create a request and see anonymized donor matches nearby.</p>
-                  <Link href="/requests">Your requests</Link>
-                </article>
-                <article className="card">
-                  <h2>Become a donor</h2>
-                  <p>
-                    Submit your screening profile for approval and view requests you can help with.
-                  </p>
-                  <Link href="/donor/profile">Donor profile</Link>
-                  <br />
-                  <Link href="/donor/matches">Matching requests</Link>
-                </article>
-              </>
+        <WorkspaceFrame role={user.role} active="/dashboard">
+          <section>
+            <div className="workspace-header">
+              <div>
+                <span className="workspace-kicker">Your BloodSync space</span>
+                <h1>Hello, {user.fullName.split(' ')[0]}.</h1>
+                <p>Here is where your next helpful step begins.</p>
+              </div>
+              <span className="badge">
+                {user.role === 'ADMIN' ? 'Administrator' : 'Community member'}
+              </span>
+            </div>
+            <div className="workspace-quick" aria-label="Your account at a glance">
+              <div className="quick-card">
+                <strong>Private by design</strong>
+                <span>Your contact details stay protected.</span>
+              </div>
+              <div className="quick-card">
+                <strong>Clear next steps</strong>
+                <span>See what needs your attention.</span>
+              </div>
+              <div className="quick-card">
+                <strong>Your account</strong>
+                <span>{user.email}</span>
+              </div>
+            </div>
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">Explore your tools</span>
+                <h2>What would you like to do?</h2>
+              </div>
+            </div>
+            <div className="card-grid">
+              {user.role === 'USER' ? (
+                <>
+                  <article className="card">
+                    <span className="feature-icon feature-icon-red" aria-hidden="true">
+                      ▤
+                    </span>
+                    <h2>Manage requests</h2>
+                    <p>Create a request and review anonymized donor matches when you need help.</p>
+                    <Link href="/requests">View your requests →</Link>
+                  </article>
+                  <article className="card">
+                    <span className="feature-icon feature-icon-blue" aria-hidden="true">
+                      ♥
+                    </span>
+                    <h2>Become a donor</h2>
+                    <p>Submit a profile for review. You choose when to respond to a match.</p>
+                    <Link href="/donor/profile">Open donor profile →</Link>
+                  </article>
+                  <article className="card">
+                    <span className="feature-icon feature-icon-taupe" aria-hidden="true">
+                      ◎
+                    </span>
+                    <h2>See matching needs</h2>
+                    <p>Explore requests that match your approved donor profile.</p>
+                    <Link href="/donor/matches">View matches →</Link>
+                  </article>
+                </>
+              ) : (
+                <>
+                  <article className="card">
+                    <span className="feature-icon feature-icon-red" aria-hidden="true">
+                      ✓
+                    </span>
+                    <h2>Review donors</h2>
+                    <p>Check submitted donor profiles and record approval decisions.</p>
+                    <Link href="/admin">Open review queue →</Link>
+                  </article>
+                  <article className="card">
+                    <span className="feature-icon feature-icon-blue" aria-hidden="true">
+                      ◌
+                    </span>
+                    <h2>Account controls</h2>
+                    <p>Manage your account data and privacy settings.</p>
+                    <Link href="/account">My account →</Link>
+                  </article>
+                </>
+              )}
+            </div>
+            {logoutError && (
+              <p role="alert" className="error">
+                {logoutError}
+              </p>
             )}
-            {user.role === 'ADMIN' && (
-              <article className="card">
-                <h2>Review donors</h2>
-                <p>Approve or reject pending profiles.</p>
-                <Link href="/admin">Admin review</Link>
-              </article>
-            )}
-          </div>
-          <p>
-            <Link href="/account">Export or delete my data</Link>
-          </p>
-          {logoutError && <p role="alert">{logoutError}</p>}
-          <button className="secondary signout" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </section>
+            <button className="secondary signout" onClick={() => void logout()}>
+              Sign out
+            </button>
+          </section>
+        </WorkspaceFrame>
       )}
     </AccountGate>
   );

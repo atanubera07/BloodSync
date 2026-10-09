@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
@@ -91,5 +92,13 @@ function Matches() {
   );
 }
 export default function DonorMatchesPage() {
-  return <AccountGate role="USER">{() => <Matches />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/matches">
+          <Matches />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }
