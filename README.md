@@ -2,11 +2,11 @@
 
 Open-source blood donation coordination software by **Atanu Bera**. The reference project informed the feature map; no reference source was copied.
 
-**Status:** Phases 1–6 source work and a polish pass are implemented. This is a prototype and **must not be used with real patient or donor data**. Clinical, legal, independent security, backup/recovery and production deployment reviews remain unverified. See the [phase audits](docs/PHASE6_AUDIT.md).
+**Status:** A synthetic-data prototype is [deployed on Vercel](https://bloodsync-ivory.vercel.app). **Do not enter real patient or donor data.** Clinical, legal, independent security, backup and recovery reviews remain open. See the [latest security check](docs/FRONTEND_SECURITY_AUDIT_2026-10-09.md) and [phase audits](docs/PHASE6_AUDIT.md).
 
 ![BloodSync home page on desktop](apps/web/public/screenshots/home-1440.png)
 
-[Mobile screenshot](apps/web/public/screenshots/home-320.png)
+[View the mobile screenshot](apps/web/public/screenshots/home-320.png)
 
 ## What works
 
@@ -16,6 +16,20 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 - Account data export, password-confirmed deletion and consent withdrawal.
 
 Bank inventory, queued email alerts and SSE alerts are deferred to v2. BloodSync does not give medical advice or confirm donor eligibility or blood compatibility.
+
+### How the MVP works
+
+```mermaid
+flowchart LR
+    Patient[Patient creates request] --> Request[Private request]
+    Donor[Donor creates profile] --> Approval[Admin reviews donor]
+    Approval --> Match[Approved donor sees redacted matches]
+    Request --> Match
+    Match --> Interest[Donor expresses interest with consent]
+    Interest --> Contact[Request owner receives contact details]
+```
+
+The request owner controls each request. Administrators review donor profiles; they do not create donor or patient accounts on behalf of users. Contact details appear only after a donor expresses interest with current consent.
 
 ## Five-minute local setup
 
