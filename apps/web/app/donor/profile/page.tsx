@@ -71,6 +71,7 @@ function ProfileForm() {
   }
   return (
     <section className="content-panel">
+      <span className="workspace-kicker">Donor details</span>
       <h1>Donor profile</h1>
       <p>
         Screening information helps an administrator review your profile. Final eligibility is
@@ -169,6 +170,7 @@ function ProfileForm() {
             <button disabled={saving}>{saving ? 'Saving…' : 'Save for review'}</button>
           </form>
           <button
+            className="secondary"
             type="button"
             onClick={async () => {
               try {

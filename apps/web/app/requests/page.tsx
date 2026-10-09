@@ -53,7 +53,7 @@ function List() {
         </p>
       ) : (
         <>
-          <div className="card-grid">
+          <div className="card-grid record-grid">
             {items.map((item) => (
               <article className="card" key={item.id}>
                 <div className="card-top">

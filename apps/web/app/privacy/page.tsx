@@ -4,7 +4,8 @@ export const metadata = {
 };
 export default function PrivacyPage() {
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">Your information</span>
       <h1>Privacy</h1>
       <p>
         <strong>Template: legal review required before real-world use.</strong> BloodSync is an

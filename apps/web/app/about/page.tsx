@@ -6,7 +6,8 @@ export const metadata: Metadata = {
 };
 export default function About() {
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">About the project</span>
       <h1>About BloodSync</h1>
       <p>
         BloodSync is an open-source prototype by Atanu Bera for coordinating blood requests and

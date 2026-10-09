@@ -282,13 +282,13 @@ button:not(.menu-toggle):not(.toast-close):hover {
   box-shadow: 0 10px 22px rgba(210, 19, 25, 0.17);
 }
 .button.secondary,
-button.secondary {
+button.secondary:not(.menu-toggle):not(.toast-close) {
   background: #fff;
   border-color: #d4d6e2;
   color: var(--navy);
 }
 .button.secondary:hover,
-button.secondary:hover {
+button.secondary:not(.menu-toggle):not(.toast-close):hover {
   background: #f3f4fa;
   border-color: var(--navy);
   color: var(--navy);
@@ -523,10 +523,70 @@ button:disabled {
 .content-panel h1 {
   font-size: clamp(2rem, 3.5vw, 3.2rem);
 }
+.editorial-page {
+  max-width: 900px;
+  border: 0;
+  border-top: 4px solid var(--red);
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(1.5rem, 4vw, 3.5rem) 0;
+}
+.editorial-page > p:first-of-type {
+  max-width: 66ch;
+  font-size: 1.06rem;
+}
+.editorial-page section {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--line);
+}
+.editorial-page section h2 {
+  font-size: clamp(1.25rem, 2.1vw, 1.6rem);
+}
+.page-skeleton {
+  display: grid;
+  gap: 1rem;
+  width: min(100%, 720px);
+  padding: 2rem 0;
+}
+.skeleton-line {
+  display: block;
+  width: 100%;
+  height: 1rem;
+  border-radius: 6px;
+  background: #eaebf2;
+  animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
+}
+.skeleton-title {
+  width: 62%;
+  height: 2.4rem;
+}
+.skeleton-short {
+  width: 72%;
+}
+@keyframes skeleton-pulse {
+  to {
+    background: #f5f5f9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line {
+    animation: none;
+  }
+}
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
   gap: 1rem;
+}
+.record-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+.record-grid .card {
+  border-top: 3px solid var(--navy);
+}
+.record-grid .card a {
+  display: inline-block;
+  margin-top: 0.75rem;
 }
 .card {
   min-width: 0;
@@ -652,7 +712,7 @@ button:disabled {
 .stacked-form input:not([type='checkbox']),
 .stacked-form select,
 .form-page input,
-.content-panel input {
+.content-panel input:not([type='checkbox']) {
   display: block;
   width: 100%;
   min-height: 47px;
@@ -669,7 +729,7 @@ button:disabled {
 .stacked-form input:focus,
 .stacked-form select:focus,
 .form-page input:focus,
-.content-panel input:focus {
+.content-panel input:not([type='checkbox']):focus {
   border-color: #777fc0;
   box-shadow: 0 0 0 4px #eef0ff;
   outline: none;
@@ -684,7 +744,8 @@ button:disabled {
   font-weight: 700;
   padding: 0 0.3rem;
 }
-.stacked-form .check {
+.stacked-form > label.check,
+.stacked-form fieldset label.check {
   display: flex;
   align-items: flex-start;
   gap: 0.7rem;
@@ -692,7 +753,11 @@ button:disabled {
   color: var(--muted);
   line-height: 1.45;
 }
-.check input {
+.check input[type='checkbox'] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
   margin-top: 0.25rem;
   accent-color: var(--red);
 }
@@ -762,6 +827,10 @@ button:disabled {
 .auth-layout .form-page > p:last-child {
   padding-top: 1rem;
   border-top: 1px solid var(--line);
+}
+.auth-layout .form-page > button {
+  width: 100%;
+  margin: 0.6rem 0;
 }
 .auth-aside {
   position: relative;
@@ -883,6 +952,47 @@ button:disabled {
 .workspace-main {
   min-width: 0;
   padding: clamp(1.4rem, 3vw, 2.5rem);
+}
+.workspace-main .content-panel {
+  max-width: 820px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.workspace-main .content-panel > h1 {
+  margin-top: 0.6rem;
+}
+.workspace-main .content-panel > p {
+  max-width: 65ch;
+}
+.form-kicker {
+  display: block;
+  margin-top: 1.2rem;
+}
+.danger-zone {
+  display: grid;
+  justify-items: start;
+  gap: 0.85rem;
+  margin-top: 2.6rem;
+  padding: 1.4rem;
+  border: 1px solid #eecacc;
+  border-radius: 12px;
+  background: #fff7f7;
+}
+.danger-zone h2,
+.danger-zone p {
+  margin: 0;
+}
+.danger-zone label {
+  display: grid;
+  gap: 0.45rem;
+  width: min(100%, 380px);
+  color: var(--navy);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 .workspace-main > section > h1 {
   font-size: clamp(2rem, 3.3vw, 3rem);

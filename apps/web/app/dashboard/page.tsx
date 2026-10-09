@@ -34,15 +34,11 @@ export default function Dashboard() {
             </div>
             <div className="workspace-quick" aria-label="Your account at a glance">
               <div className="quick-card">
-                <strong>Private by design</strong>
-                <span>Your contact details stay protected.</span>
+                <strong>{user.role === 'ADMIN' ? 'Administrator' : 'Community member'}</strong>
+                <span>Account role</span>
               </div>
               <div className="quick-card">
-                <strong>Clear next steps</strong>
-                <span>See what needs your attention.</span>
-              </div>
-              <div className="quick-card">
-                <strong>Your account</strong>
+                <strong>Signed in</strong>
                 <span>{user.email}</span>
               </div>
             </div>

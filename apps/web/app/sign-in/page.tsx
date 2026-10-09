@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { AuthFrame } from '../../components/AuthFrame';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -33,7 +34,7 @@ export default function SignIn() {
     }
   }
   return (
-    <div className="auth-layout">
+    <AuthFrame>
       <section className="form-page">
         <span className="eyebrow">Welcome back</span>
         <h1>Good to see you again.</h1>
@@ -57,13 +58,6 @@ export default function SignIn() {
           New here? <Link href="/sign-up">Create an account</Link>
         </p>
       </section>
-      <aside className="auth-aside" aria-label="About BloodSync">
-        <div className="auth-aside-content">
-          <span className="eyebrow">A little hope goes a long way</span>
-          <h2>Care is stronger when we connect.</h2>
-          <p>Private requests. Approved donors. A clearer path to helping someone.</p>
-        </div>
-      </aside>
-    </div>
+    </AuthFrame>
   );
 }

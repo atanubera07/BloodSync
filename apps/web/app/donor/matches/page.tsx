@@ -58,7 +58,7 @@ function Matches() {
           <Link href="/donor/profile">profile and approval status</Link>.
         </p>
       ) : (
-        <div className="card-grid">
+        <div className="card-grid record-grid">
           {items.map((item) => (
             <article className="card" key={item.id}>
               <div className="card-top">

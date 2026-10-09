@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { api } from '../../lib/api';
+import { AuthFrame } from '../../components/AuthFrame';
 function ResetPasswordContent() {
   const token = useSearchParams().get('token');
   const [message, setMessage] = useState('');
@@ -33,23 +34,37 @@ function ResetPasswordContent() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Choose a new password</h1>
-      {token ? (
-        <form onSubmit={submit}>
-          <label>
-            New password
-            <input name="password" type="password" minLength={12} maxLength={128} required />
-          </label>
-          <button disabled={pending}>{pending ? 'Updating…' : 'Update password'}</button>
-        </form>
-      ) : (
+    <AuthFrame>
+      <section className="form-page">
+        <span className="eyebrow">Account recovery</span>
+        <h1>Choose a new password.</h1>
+        <p>Use a password with at least 12 characters.</p>
+        {token ? (
+          <form onSubmit={submit}>
+            <label>
+              New password
+              <input
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={128}
+                required
+              />
+            </label>
+            <button disabled={pending}>{pending ? 'Updating…' : 'Update password'}</button>
+          </form>
+        ) : (
+          <p>
+            Missing reset link. <Link href="/forgot-password">Request a new link</Link>.
+          </p>
+        )}
+        {message && <p role="status">{message}</p>}
         <p>
-          Missing reset link. <Link href="/forgot-password">Request a new link</Link>.
+          <Link href="/sign-in">Return to sign in</Link>
         </p>
-      )}
-      {message && <p role="status">{message}</p>}
-    </section>
+      </section>
+    </AuthFrame>
   );
 }
 

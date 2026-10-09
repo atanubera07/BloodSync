@@ -12,6 +12,7 @@ export default function NewRequestPage() {
         <WorkspaceFrame role="USER" active="/requests">
           <section className="content-panel">
             <Link href="/requests">← Your requests</Link>
+            <span className="workspace-kicker form-kicker">Patient request</span>
             <h1>Create a blood request</h1>
             <p>
               If this is a medical emergency, contact your hospital or local emergency services

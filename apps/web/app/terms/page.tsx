@@ -4,7 +4,8 @@ export const metadata = {
 };
 export default function TermsPage() {
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">Using BloodSync</span>
       <h1>Terms</h1>
       <p>
         <strong>Template: legal review required before real-world use.</strong> This prototype is

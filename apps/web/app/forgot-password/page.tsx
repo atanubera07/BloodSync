@@ -1,6 +1,8 @@
 'use client';
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { api } from '../../lib/api';
+import { AuthFrame } from '../../components/AuthFrame';
 export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
@@ -26,17 +28,24 @@ export default function ForgotPassword() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Reset your password</h1>
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input name="email" type="email" required />
-        </label>
-        <button disabled={pending}>{pending ? 'Sending…' : 'Send reset link'}</button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-      {sent && <p role="status">If an account exists, we sent a reset link.</p>}
-    </section>
+    <AuthFrame>
+      <section className="form-page">
+        <span className="eyebrow">Account recovery</span>
+        <h1>Reset your password.</h1>
+        <p>Enter your email and we’ll send a link if an account exists.</p>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <button disabled={pending}>{pending ? 'Sending…' : 'Send reset link'}</button>
+        </form>
+        {error && <p role="alert">{error}</p>}
+        {sent && <p role="status">If an account exists, we sent a reset link.</p>}
+        <p>
+          Remember your password? <Link href="/sign-in">Sign in</Link>
+        </p>
+      </section>
+    </AuthFrame>
   );
 }
