@@ -43,6 +43,12 @@ export class AuthService {
         data: {
           email: data.data.email,
           fullName: data.data.fullName,
+          phoneNumber: data.data.phoneNumber,
+          declaredBloodGroup: data.data.declaredBloodGroup,
+          postalAddress: data.data.postalAddress,
+          city: data.data.city,
+          stateRegion: data.data.stateRegion,
+          termsAcceptedAt: new Date(),
           passwordHash: await hashPassword(data.data.password),
         },
         select: { id: true, email: true, fullName: true, role: true },
