@@ -47,16 +47,21 @@ The Compose database credentials are for local development only. The web app pro
 
 ```mermaid
 flowchart LR
-    Browser -->|same-origin /api| Web[Next.js web]
-    Web --> API[NestJS API]
-    API --> DB[(PostgreSQL + PostGIS)]
-    API --> Redis[(Redis + BullMQ)]
+    Browser[Browser] -->|pages| Web[Next.js web]
+    Browser -->|same-origin /api, session cookies| API[NestJS API]
+    Web -->|apiJson, CSRF and refresh handling| API
+    API -->|requests and matching| DB[(PostgreSQL + PostGIS)]
+    API -->|rate limits| Redis[(Redis)]
+    API -->|verification and reset jobs| Queue[Vercel Queue]
+    Queue --> Consumer[Next.js queue consumer]
+    Consumer -->|internal authenticated call| API
     API --> SMTP[SMTP]
+    Cron[Vercel Cron] -->|expire requests| API
     Shared[Shared Zod contracts and screening rules] --> Web
     Shared --> API
 ```
 
-`apps/web` contains the Next.js UI and same-origin proxy. `apps/api` enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Locally, request expiry and account email jobs run through BullMQ. On Vercel, Cron expires requests daily and Vercel Queues dispatches account email. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
+`apps/web` contains the Next.js UI and its shared API client. Vercel routes `/api` to `apps/api`, which enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Locally, request expiry and account email jobs run through BullMQ. On Vercel, Cron expires requests daily and Vercel Queues dispatches account email through the web consumer. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
 
 ## Checks and operations
 
