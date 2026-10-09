@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
@@ -57,7 +58,7 @@ function Matches() {
           <Link href="/donor/profile">profile and approval status</Link>.
         </p>
       ) : (
-        <div className="card-grid">
+        <div className="card-grid record-grid">
           {items.map((item) => (
             <article className="card" key={item.id}>
               <div className="card-top">
@@ -91,5 +92,13 @@ function Matches() {
   );
 }
 export default function DonorMatchesPage() {
-  return <AccountGate role="USER">{() => <Matches />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/matches">
+          <Matches />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { siteUrl } from '../lib/site';
 import './style.css';
 import { HeaderNav } from '../components/HeaderNav';
+import { ToastHost } from '../components/ToastHost';
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: 'BloodSync', template: '%s | BloodSync' },
@@ -26,22 +27,40 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <Link className="skip-link" href="#main-content">
           Skip to content
         </Link>
-        <header>
-          <Link href="/">BloodSync</Link>
-          <HeaderNav />
-        </header>
-        <main id="main-content">{children}</main>
-        <footer>
-          <span>BloodSync · This service does not replace emergency medical care.</span>
-          <nav aria-label="Footer navigation">
-            <Link href="/about">About</Link>
-            <Link href="/faq">FAQ</Link>
-            <Link href="/contact">Contact</Link>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-            <Link href="/account">My data</Link>
-          </nav>
-        </footer>
+        <div className="site-frame">
+          <header className="site-header">
+            <div className="header-inner">
+              <Link className="brand" href="/" aria-label="BloodSync home">
+                <span className="brand-mark" aria-hidden="true">
+                  ✦
+                </span>
+                <span>
+                  Blood<span className="brand-accent">Sync</span>
+                </span>
+              </Link>
+              <HeaderNav />
+            </div>
+          </header>
+          <main id="main-content">{children}</main>
+          <footer className="site-footer">
+            <div>
+              <Link className="footer-brand" href="/">
+                BloodSync<span className="brand-accent">.</span>
+              </Link>
+              <p>Thoughtful connections when they matter most.</p>
+              <small>This service does not replace emergency medical care.</small>
+            </div>
+            <nav aria-label="Footer navigation">
+              <Link href="/about">About</Link>
+              <Link href="/faq">FAQ</Link>
+              <Link href="/contact">Contact</Link>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/account">My data</Link>
+            </nav>
+          </footer>
+        </div>
+        <ToastHost />
       </body>
     </html>
   );

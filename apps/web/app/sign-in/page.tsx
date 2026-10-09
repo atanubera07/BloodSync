@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { AuthFrame } from '../../components/AuthFrame';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -33,26 +34,30 @@ export default function SignIn() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Sign in</h1>
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="email" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" autoComplete="current-password" required />
-        </label>
-        <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
-        {error && <p role="alert">{error}</p>}
-      </form>
-      <p>
-        <Link href="/forgot-password">Forgot your password?</Link>
-      </p>
-      <p>
-        New here? <Link href="/sign-up">Create an account</Link>
-      </p>
-    </section>
+    <AuthFrame>
+      <section className="form-page">
+        <span className="eyebrow">Welcome back</span>
+        <h1>Good to see you again.</h1>
+        <p>Sign in to manage your requests, donor profile, and account.</p>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autoComplete="current-password" required />
+          </label>
+          <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+        <p>
+          <Link href="/forgot-password">Forgot your password?</Link>
+        </p>
+        <p>
+          New here? <Link href="/sign-up">Create an account</Link>
+        </p>
+      </section>
+    </AuthFrame>
   );
 }

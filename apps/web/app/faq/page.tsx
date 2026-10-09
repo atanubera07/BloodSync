@@ -39,7 +39,8 @@ export default async function FAQ() {
     })),
   }).replace(/</g, '\\u003c');
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">Good to know</span>
       <h1>Frequently asked questions</h1>
       {questions.map((item) => (
         <section key={item.question}>

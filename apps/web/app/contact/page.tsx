@@ -6,7 +6,8 @@ export const metadata: Metadata = {
 };
 export default function Contact() {
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">Get in touch</span>
       <h1>Contact</h1>
       <p>
         For a general project question, use{' '}

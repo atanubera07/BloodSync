@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { LocationFields, optionalCoordinates } from '../../../components/LocationFields';
 import { api, apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
@@ -70,6 +71,7 @@ function ProfileForm() {
   }
   return (
     <section className="content-panel">
+      <span className="workspace-kicker">Donor details</span>
       <h1>Donor profile</h1>
       <p>
         Screening information helps an administrator review your profile. Final eligibility is
@@ -168,6 +170,7 @@ function ProfileForm() {
             <button disabled={saving}>{saving ? 'Saving…' : 'Save for review'}</button>
           </form>
           <button
+            className="secondary"
             type="button"
             onClick={async () => {
               try {
@@ -199,5 +202,13 @@ function ProfileForm() {
   );
 }
 export default function DonorProfilePage() {
-  return <AccountGate role="USER">{() => <ProfileForm />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/profile">
+          <ProfileForm />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

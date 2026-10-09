@@ -2,11 +2,11 @@
 
 Open-source blood donation coordination software by **Atanu Bera**. The reference project informed the feature map; no reference source was copied.
 
-**Status:** Phases 1–6 source work and a polish pass are implemented. This is a prototype and **must not be used with real patient or donor data**. Clinical, legal, independent security, backup/recovery and production deployment reviews remain unverified. See the [phase audits](docs/PHASE6_AUDIT.md).
+**Status:** A synthetic-data prototype is [deployed on Vercel](https://bloodsync-ivory.vercel.app). **Do not enter real patient or donor data.** Clinical, legal, independent security, backup and recovery reviews remain open. See the [latest security check](docs/FRONTEND_SECURITY_AUDIT_2026-10-09.md) and [phase audits](docs/PHASE6_AUDIT.md).
 
 ![BloodSync home page on desktop](apps/web/public/screenshots/home-1440.png)
 
-[Mobile screenshot](apps/web/public/screenshots/home-320.png)
+[View the mobile screenshot](apps/web/public/screenshots/home-320.png)
 
 ## What works
 
@@ -16,6 +16,20 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 - Account data export, password-confirmed deletion and consent withdrawal.
 
 Bank inventory, queued email alerts and SSE alerts are deferred to v2. BloodSync does not give medical advice or confirm donor eligibility or blood compatibility.
+
+### How the MVP works
+
+```mermaid
+flowchart LR
+    Patient[Patient creates request] --> Request[Private request]
+    Donor[Donor creates profile] --> Approval[Admin reviews donor]
+    Approval --> Match[Approved donor sees redacted matches]
+    Request --> Match
+    Match --> Interest[Donor expresses interest with consent]
+    Interest --> Contact[Request owner receives contact details]
+```
+
+The request owner controls each request. Administrators review donor profiles; they do not create donor or patient accounts on behalf of users. Contact details appear only after a donor expresses interest with current consent.
 
 ## Five-minute local setup
 
@@ -27,22 +41,27 @@ Requirements: Node 24, pnpm 11, Docker Compose.
 4. Run `pnpm dev`; the root command loads `.env` for both apps.
 5. Open `http://localhost:3000`. Verification and reset messages appear in Mailpit at `http://localhost:8025`. API liveness and readiness are at `/health/live` and `/health/ready`; the API is versioned under `/v1`, with OpenAPI documentation at `/v1/docs`.
 
-The Compose database credentials are for local development only. The web app proxies `/api` to `API_ORIGIN` so the browser and API cookies share one host. A production build requires explicit HTTPS `API_ORIGIN` and `SITE_URL`; the API requires a non-local `SMTP_HOST` and `MAIL_FROM`. Production domain, CORS, secrets and SMTP settings must be reviewed before use. Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies between the client and API: use `1` only for a topology with one proxy, such as a dedicated Next.js proxy, and `0` for direct connections. Block direct public access to the API when trusting forwarded IP headers. The API warns at startup if production uses `0`; this is a prompt to verify the topology, not a reason to guess a hop count.
+The Compose database credentials are for local development only. The web app proxies `/api` to `API_ORIGIN` so the browser and API cookies share one host. A non-Vercel production build requires explicit HTTPS `API_ORIGIN` and `SITE_URL`; the API requires a non-local `SMTP_HOST` and `MAIL_FROM`. The Vercel configuration uses two Services, Vercel Queues for account email, and a daily Cron for request expiry; see [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md). Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies between the client and API: use `1` only for a topology with one proxy, such as a dedicated Next.js proxy, and `0` for direct connections. Block direct public access to the API when trusting forwarded IP headers. The API warns at startup if production uses `0`; this is a prompt to verify the topology, not a reason to guess a hop count.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Browser -->|same-origin /api| Web[Next.js web]
-    Web --> API[NestJS API]
-    API --> DB[(PostgreSQL + PostGIS)]
-    API --> Redis[(Redis + BullMQ)]
+    Browser[Browser] -->|pages| Web[Next.js web]
+    Browser -->|same-origin /api, session cookies| API[NestJS API]
+    Web -->|apiJson, CSRF and refresh handling| API
+    API -->|requests and matching| DB[(PostgreSQL + PostGIS)]
+    API -->|rate limits| Redis[(Redis)]
+    API -->|verification and reset jobs| Queue[Vercel Queue]
+    Queue --> Consumer[Next.js queue consumer]
+    Consumer -->|internal authenticated call| API
     API --> SMTP[SMTP]
+    Cron[Vercel Cron] -->|expire requests| API
     Shared[Shared Zod contracts and screening rules] --> Web
     Shared --> API
 ```
 
-`apps/web` contains the Next.js UI and same-origin proxy. `apps/api` enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Request expiry and account email jobs run through BullMQ. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
+`apps/web` contains the Next.js UI and its shared API client. Vercel routes `/api` to `apps/api`, which enforces roles, ownership, consent, rate limits and CSRF. `packages/shared` contains contracts and configurable screening defaults. Locally, request expiry and account email jobs run through BullMQ. On Vercel, Cron expires requests daily and Vercel Queues dispatches account email through the web consumer. Matching uses indexed PostGIS geography expressions and a 50 km radius with a same-city fallback. No public donor contact endpoint exists.
 
 ## Checks and operations
 

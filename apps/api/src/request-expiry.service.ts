@@ -26,6 +26,7 @@ export class RequestExpiryService implements OnApplicationBootstrap, OnApplicati
   }
 
   async onApplicationBootstrap() {
+    if (this.config?.values.VERCEL) return;
     const connection = {
       url: this.config?.values.REDIS_URL ?? readConfig().REDIS_URL,
       maxRetriesPerRequest: null,

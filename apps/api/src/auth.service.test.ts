@@ -6,6 +6,42 @@ import type { MailService } from './mail.service';
 import type { RegisterInput } from '@bloodsync/shared';
 
 describe('AuthService security boundaries', () => {
+  it('stores optional signup details and rejects missing terms consent', async () => {
+    const create = vi
+      .fn()
+      .mockResolvedValue({ id: 'synthetic-id', email: 'synthetic@example.test' });
+    const db = {
+      user: { findUnique: vi.fn().mockResolvedValue(null), create },
+    } as unknown as PrismaService;
+    const auth = new AuthService(db, { enqueue: vi.fn() } as unknown as MailService);
+    const details = {
+      email: 'synthetic@example.test',
+      password: 'synthetic-long-password',
+      fullName: 'Synthetic User',
+      phoneNumber: '+1 555 010 0000',
+      declaredBloodGroup: 'O+' as const,
+      postalAddress: '123 Example Street',
+      city: 'Example City',
+      stateRegion: 'Example State',
+    };
+    await expect(auth.register(details as RegisterInput)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(create).not.toHaveBeenCalled();
+    await auth.register({ ...details, acceptTerms: true });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          phoneNumber: details.phoneNumber,
+          declaredBloodGroup: details.declaredBloodGroup,
+          postalAddress: details.postalAddress,
+          city: details.city,
+          stateRegion: details.stateRegion,
+          termsAcceptedAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
   it('returns a created account when verification queue is unavailable so resend remains possible', async () => {
     const created = {
       id: '550e8400-e29b-41d4-a716-446655440000',
@@ -28,6 +64,7 @@ describe('AuthService security boundaries', () => {
         email: created.email,
         password: 'synthetic-long-password',
         fullName: created.fullName,
+        acceptTerms: true,
       }),
     ).resolves.toEqual(created);
     expect(mail.enqueue).toHaveBeenCalledWith(created.email, 'VERIFY');
@@ -41,6 +78,7 @@ describe('AuthService security boundaries', () => {
         email: 'user@example.com',
         password: 'long-safe-password',
         fullName: 'Test User',
+        acceptTerms: true,
         role: 'ADMIN',
       } as RegisterInput),
     ).rejects.toBeInstanceOf(BadRequestException);

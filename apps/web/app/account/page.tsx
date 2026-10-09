@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
+import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { apiJson } from '../../lib/api';
 function AccountActions() {
   const [password, setPassword] = useState('');
@@ -45,34 +46,45 @@ function AccountActions() {
   }
   return (
     <section className="content-panel">
+      <span className="workspace-kicker">Privacy controls</span>
       <h1>Account and data</h1>
       <p>
         <Link href="/privacy">Read the privacy policy</Link> before using these controls.
       </p>
-      <button type="button" disabled={busy} onClick={exportData}>
+      <button className="secondary" type="button" disabled={busy} onClick={exportData}>
         Download my data
       </button>
-      <h2>Delete account</h2>
-      <p>
-        This permanently removes your account, donor profile, requests and sessions. Anonymous
-        security event metadata remains.
-      </p>
-      <label>
-        Password confirmation
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-        />
-      </label>
-      <button type="button" disabled={busy || !password} onClick={deleteAccount}>
-        Delete my account
-      </button>
+      <div className="danger-zone">
+        <h2>Delete account</h2>
+        <p>
+          This permanently removes your account, donor profile, requests and sessions. Anonymous
+          security event metadata remains.
+        </p>
+        <label>
+          Password confirmation
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+          />
+        </label>
+        <button type="button" disabled={busy || !password} onClick={deleteAccount}>
+          Delete my account
+        </button>
+      </div>
       {message && <p role="status">{message}</p>}
     </section>
   );
 }
 export default function AccountPage() {
-  return <AccountGate>{() => <AccountActions />}</AccountGate>;
+  return (
+    <AccountGate>
+      {(user) => (
+        <WorkspaceFrame role={user.role} active="/account">
+          <AccountActions />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }
