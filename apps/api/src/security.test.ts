@@ -24,6 +24,11 @@ describe('cookie mutation CSRF protection', () => {
   it('allows a valid token and safe reads', () => {
     expect(isAllowedMutation(request('POST', origin, token), origin)).toBe(true);
     expect(isAllowedMutation(request('GET'), origin)).toBe(true);
+    expect(isAllowedMutation(request('get'), origin)).toBe(true);
+  });
+  it('handles multi-byte headers without throwing', () => {
+    const multiByteToken = 'a'.repeat(42) + '€';
+    expect(isAllowedMutation(request('POST', origin, multiByteToken), origin)).toBe(false);
   });
   it('allows non-browser clients without cookies or foreign origins', () => {
     expect(isAllowedMutation(request('POST', undefined, undefined, false), origin)).toBe(true);
