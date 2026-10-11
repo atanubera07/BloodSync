@@ -7,12 +7,43 @@ import {
 import { PrismaService } from './prisma.service';
 import type { Actor } from './actor';
 import { verifyPassword } from './password';
-import { PRIVACY_VERSION, consentSchema, deleteAccountSchema } from '@bloodsync/shared';
+import {
+  PRIVACY_VERSION,
+  accountDetailsSchema,
+  consentSchema,
+  deleteAccountSchema,
+} from '@bloodsync/shared';
 import type { z } from 'zod';
 
 @Injectable()
 export class MeService {
   constructor(private readonly db: PrismaService) {}
+  private readonly accountSelect = {
+    fullName: true,
+    email: true,
+    phoneNumber: true,
+    declaredBloodGroup: true,
+    postalAddress: true,
+    city: true,
+    stateRegion: true,
+  } as const;
+  async details(actor: Actor) {
+    const details = await this.db.user.findUnique({
+      where: { id: actor.id },
+      select: this.accountSelect,
+    });
+    if (!details) throw new UnauthorizedException();
+    return details;
+  }
+  async updateDetails(actor: Actor, input: z.infer<typeof accountDetailsSchema>) {
+    const parsed = accountDetailsSchema.safeParse(input);
+    if (!parsed.success) throw new BadRequestException('Invalid account details');
+    return this.db.user.update({
+      where: { id: actor.id },
+      data: parsed.data,
+      select: this.accountSelect,
+    });
+  }
   async consent(actor: Actor) {
     return this.db.consentRecord.findFirst({
       where: { userId: actor.id },

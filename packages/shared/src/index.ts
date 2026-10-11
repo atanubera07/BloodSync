@@ -29,6 +29,15 @@ export const resetPasswordSchema = z.strictObject({
   password: passwordSchema,
 });
 export const deleteAccountSchema = z.strictObject({ password: z.string().min(1) });
+export const accountDetailsSchema = z
+  .strictObject({
+    phoneNumber: registerSchema.shape.phoneNumber.unwrap().nullable().optional(),
+    declaredBloodGroup: bloodGroupSchema.nullable().optional(),
+    postalAddress: z.string().trim().max(250).nullable().optional(),
+    city: z.string().trim().max(100).nullable().optional(),
+    stateRegion: z.string().trim().max(100).nullable().optional(),
+  })
+  .refine((details) => Object.keys(details).length > 0, 'No account changes provided');
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export * from './mvp';

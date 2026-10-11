@@ -18,6 +18,7 @@ function eventFor(
   if (/^\/admin\/donors\/[^/]+\/(approve|reject)$/.test(path)) return 'DONOR_REVIEW';
   if (/^\/donors\/me\/interests\//.test(path)) return 'CONTACT_SHARING';
   if (path === '/me/export') return 'DATA_EXPORT';
+  if (path === '/me/details' && method === 'PATCH') return 'ACCOUNT_DETAILS_UPDATED';
   if (path === '/me' && method === 'DELETE') return 'ACCOUNT_DELETION';
   if (path === '/me/consent') return method === 'DELETE' ? 'CONSENT_WITHDRAWN' : 'CONSENT_GRANTED';
   return null;

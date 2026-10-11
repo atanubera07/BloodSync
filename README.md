@@ -4,6 +4,8 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 
 **Status:** A synthetic-data prototype is [deployed on Vercel](https://bloodsync-ivory.vercel.app). **Do not enter real patient or donor data.** Clinical, legal, independent security, backup and recovery reviews remain open. See the [latest security check](docs/FRONTEND_SECURITY_AUDIT_2026-10-09.md) and [phase audits](docs/PHASE6_AUDIT.md).
 
+The [product refinement check](docs/PRODUCT_REFINEMENT_2026-10-11.md) records the latest workflow improvements and open product gaps.
+
 ![BloodSync home page on desktop](apps/web/public/screenshots/home-1440.png)
 
 [View the mobile screenshot](apps/web/public/screenshots/home-320.png)
@@ -14,6 +16,7 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 - Patient-owned requests with expiry, approved donor profiles and nearby, redacted matching.
 - Donor interest with current, explicit contact-sharing consent, administrator approval and audit events.
 - Account data export, password-confirmed deletion and consent withdrawal.
+- Account detail review and editing for optional signup fields, plus dashboard guidance based on donor approval and request history.
 
 Bank inventory, queued email alerts and SSE alerts are deferred to v2. BloodSync does not give medical advice or confirm donor eligibility or blood compatibility.
 

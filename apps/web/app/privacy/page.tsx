@@ -28,11 +28,12 @@ export default function PrivacyPage() {
       </p>
       <h2>Control and retention</h2>
       <p>
-        You can withdraw donor consent on the donor profile page, export your data, or delete your
-        account from the account page. Withdrawal stops future matching and removes existing
-        interests. Deleting an account removes its profiles, requests, sessions and tokens.
-        Anonymous audit event type, time and result remain for security review. Production retention
-        periods and legal basis require local legal review.
+        You can review and update optional account details, export your data, or delete your account
+        from the account page. You can withdraw donor consent on the donor profile page. Withdrawal
+        stops future matching and removes existing interests. Deleting an account removes its
+        profiles, requests, sessions and tokens. Anonymous audit event type, time and result remain
+        for security review. Production retention periods and legal basis require local legal
+        review.
       </p>
       <p>
         Questions and private security reports:{' '}

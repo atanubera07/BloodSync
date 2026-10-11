@@ -4,7 +4,100 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AccountGate } from '../../components/AccountGate';
 import { WorkspaceFrame } from '../../components/WorkspaceFrame';
-import { apiJson } from '../../lib/api';
+import { api, apiJson } from '../../lib/api';
+import { useResource } from '../../lib/use-resource';
+
+type DonorStatus = { status: 'PENDING' | 'APPROVED' | 'REJECTED' } | null;
+type RequestSummary = { id: string; status: string };
+const loadOverview = async () => {
+  const [profileResponse, requests] = await Promise.all([
+    api('/donors/me'),
+    apiJson<RequestSummary[]>('/requests'),
+  ]);
+  if (!profileResponse.ok && profileResponse.status !== 404)
+    throw new Error('Unable to load donor status');
+  const profile =
+    profileResponse.status === 404 ? null : ((await profileResponse.json()) as DonorStatus);
+  return { profile, requests };
+};
+function UserProgress() {
+  const { data, loading, error, reload } = useResource(
+    loadOverview,
+    'Unable to load your current activity.',
+  );
+  const donorStatus = data?.profile?.status;
+  const nextStep =
+    donorStatus === 'APPROVED'
+      ? {
+          title: 'Approved for matching',
+          body: 'Review requests that match your donor profile.',
+          href: '/donor/matches',
+          action: 'View matching requests',
+        }
+      : donorStatus === 'PENDING'
+        ? {
+            title: 'Profile awaiting review',
+            body: 'An administrator will review your screening details before matching starts.',
+            href: '/donor/profile',
+            action: 'View donor profile',
+          }
+        : donorStatus === 'REJECTED'
+          ? {
+              title: 'Profile needs an update',
+              body: 'Review your screening details before submitting again.',
+              href: '/donor/profile',
+              action: 'Update donor profile',
+            }
+          : {
+              title: 'Become a potential donor',
+              body: 'Complete a donor profile to request an eligibility review.',
+              href: '/donor/profile',
+              action: 'Start donor profile',
+            };
+  return (
+    <section className="dashboard-progress" aria-labelledby="progress-title">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Current activity</span>
+          <h2 id="progress-title">Your next steps</h2>
+        </div>
+      </div>
+      {loading ? (
+        <p role="status">Loading your activity…</p>
+      ) : error ? (
+        <div role="alert">
+          <p className="error">{error}</p>
+          <button type="button" onClick={reload}>
+            Retry
+          </button>
+        </div>
+      ) : data ? (
+        <div className="progress-grid">
+          <article className="progress-item">
+            <span className="workspace-kicker">Donating</span>
+            <h3>{nextStep.title}</h3>
+            <p>{nextStep.body}</p>
+            <Link href={nextStep.href}>{nextStep.action} →</Link>
+          </article>
+          <article className="progress-item">
+            <span className="workspace-kicker">Requesting</span>
+            <h3>
+              {data.requests.length ? 'Your requests are ready to review' : 'No requests yet'}
+            </h3>
+            <p>
+              {data.requests.length
+                ? 'Check status, donor matches, and responses for your recent requests.'
+                : 'Create a private request when you need blood donation support.'}
+            </p>
+            <Link href={data.requests.length ? '/requests' : '/requests/new'}>
+              {data.requests.length ? 'Review requests' : 'Create a request'} →
+            </Link>
+          </article>
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -42,6 +135,7 @@ export default function Dashboard() {
                 <span>{user.email}</span>
               </div>
             </div>
+            {user.role === 'USER' && <UserProgress />}
             <div className="section-heading">
               <div>
                 <span className="eyebrow">Explore your tools</span>

@@ -12,6 +12,7 @@ const POLICIES = [
   { path: /^\/me\/consent$/, limit: 10, name: 'consent' },
   { path: /^\/me$/, limit: 3, name: 'account-delete' },
   { path: /^\/me\/export$/, limit: 5, name: 'data-export' },
+  { path: /^\/me\/details$/, limit: 20, name: 'account-details' },
 ];
 const script = `local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return {n, redis.call('TTL', KEYS[1])}`;
 export function rateLimit(redis: {

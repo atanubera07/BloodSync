@@ -42,6 +42,7 @@ describe('shared Redis limiter', () => {
     ['DELETE', '/v1/me', 3],
     ['GET', '/api/v1/me/export', 5],
     ['DELETE', '/api/v1/me', 3],
+    ['PATCH', '/v1/me/details', 20],
   ])('limits %s %s', async (method, path, limit) => {
     let count = 0;
     const redis = { eval: vi.fn(async () => [++count, 60]) } as unknown as Redis;

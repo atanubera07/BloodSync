@@ -15,6 +15,31 @@ const actor = {
   fullName: 'User',
 };
 describe('privacy controls', () => {
+  it('reads and updates only the current account for either role', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ email: actor.email, city: 'Old City' });
+    const update = vi.fn().mockResolvedValue({ email: actor.email, city: 'New City' });
+    const db = { user: { findUnique, update } } as unknown as PrismaService;
+    const me = new MeService(db);
+    for (const role of ['USER', 'ADMIN'] as const) {
+      const own = { ...actor, role, id: `${role}-account` };
+      await me.details(own);
+      await me.updateDetails(own, { city: 'New City', phoneNumber: null });
+      expect(findUnique).toHaveBeenLastCalledWith(
+        expect.objectContaining({ where: { id: own.id } }),
+      );
+      expect(update).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: { id: own.id },
+          data: { city: 'New City', phoneNumber: null },
+          select: expect.not.objectContaining({ passwordHash: true }),
+        }),
+      );
+    }
+    await expect(
+      me.updateDetails(actor, { city: 'New City', role: 'ADMIN' } as never),
+    ).rejects.toThrow('Invalid account details');
+    expect(update).toHaveBeenCalledTimes(2);
+  });
   it('blocks donor profile creation before active consent', async () => {
     const db = {
       consentRecord: { findFirst: vi.fn().mockResolvedValue(null) },

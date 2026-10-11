@@ -711,6 +711,7 @@ button:disabled {
 }
 .stacked-form input:not([type='checkbox']),
 .stacked-form select,
+.stacked-form textarea,
 .form-page input,
 .content-panel input:not([type='checkbox']) {
   display: block;
@@ -728,6 +729,7 @@ button:disabled {
 }
 .stacked-form input:focus,
 .stacked-form select:focus,
+.stacked-form textarea:focus,
 .form-page input:focus,
 .content-panel input:not([type='checkbox']):focus {
   border-color: #777fc0;
@@ -1444,5 +1446,44 @@ button.toast-close {
   }
   .signup-heading {
     padding-bottom: 1.3rem;
+  }
+}
+.account-stack {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+.account-stack .content-panel + .content-panel {
+  padding-top: clamp(1.5rem, 3vw, 2.5rem);
+  border-top: 1px solid var(--line);
+}
+.dashboard-progress {
+  margin: 1.7rem 0 2.2rem;
+}
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.progress-item {
+  padding: clamp(1.2rem, 2vw, 1.7rem);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--red);
+  border-radius: 12px;
+  background: #fff;
+}
+.progress-item h3 {
+  margin: 0.65rem 0;
+  font-size: 1.2rem;
+}
+.progress-item p {
+  max-width: 46ch;
+  color: var(--muted);
+}
+.progress-item a {
+  font-weight: 700;
+}
+@media (max-width: 700px) {
+  .progress-grid {
+    grid-template-columns: 1fr;
   }
 }
