@@ -23,6 +23,7 @@ const configSchema = z.object({
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const effectiveEnv = {
     ...env,
+    TRUST_PROXY_HOPS: env.TRUST_PROXY_HOPS ?? (env.VERCEL ? '1' : '0'),
     WEB_ORIGIN:
       env.WEB_ORIGIN ||
       (env.VERCEL && env.VERCEL_PROJECT_PRODUCTION_URL

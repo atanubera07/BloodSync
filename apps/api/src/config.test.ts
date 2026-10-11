@@ -22,6 +22,19 @@ describe('Vercel production configuration', () => {
     ).toBe('https://bloodsync.vercel.app');
   });
 
+  it('trusts the Vercel proxy hop for client IP rate limits', () => {
+    expect(readConfig(env).TRUST_PROXY_HOPS).toBe(1);
+    expect(
+      readConfig({
+        ...env,
+        VERCEL: undefined,
+        NODE_ENV: 'development',
+        WEB_ORIGIN: 'http://localhost:3000',
+      }).TRUST_PROXY_HOPS,
+    ).toBe(0);
+    expect(readConfig({ ...env, TRUST_PROXY_HOPS: '0' }).TRUST_PROXY_HOPS).toBe(0);
+  });
+
   it('requires internal job and cron secrets', () => {
     expect(() => readConfig({ ...env, INTERNAL_JOB_SECRET: undefined })).toThrow();
     expect(() => readConfig({ ...env, CRON_SECRET: undefined })).toThrow();
