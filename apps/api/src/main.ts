@@ -10,6 +10,7 @@ import express from 'express';
 import { BadRequestException, RequestMethod } from '@nestjs/common';
 import { rateLimit } from './rate-limit';
 import { RateLimitRedis } from './rate-limit-redis';
+import { AuthService } from './auth.service';
 import { installOpenApi } from './openapi';
 import type { Request, Response, NextFunction } from 'express';
 async function bootstrap() {
@@ -41,7 +42,21 @@ async function bootstrap() {
       return next(new BadRequestException('Invalid request origin'));
     next();
   });
-  app.use(rateLimit(app.get(RateLimitRedis).client));
+  const auth = app.get(AuthService);
+  app.use(
+    rateLimit(app.get(RateLimitRedis).client, async (req) => {
+      const header = req.headers.authorization;
+      const token =
+        req.cookies?.bs_access ||
+        (typeof header === 'string' ? /^Bearer ([^\s]+)$/.exec(header)?.[1] : undefined);
+      if (typeof token !== 'string') return undefined;
+      try {
+        return (await auth.verifyAccess(token)).id;
+      } catch {
+        return undefined;
+      }
+    }),
+  );
   await app.listen(process.env.PORT ? Number(process.env.PORT) : config.API_PORT, '0.0.0.0');
 }
 bootstrap().catch((error) => {
