@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
 import { WorkspaceFrame } from '../../components/WorkspaceFrame';
+import { StatusBadge } from '../../components/StatusBadge';
 import { apiJson } from '../../lib/api';
 import type { BloodRequest } from '../../components/RequestForm';
 function List() {
@@ -58,12 +59,17 @@ function List() {
               <article className="card" key={item.id}>
                 <div className="card-top">
                   <strong>{item.bloodGroup}</strong>
-                  <span className="badge">{item.status.toLowerCase()}</span>
+                  <StatusBadge kind="request" value={item.status} />
                 </div>
                 <h2>{item.hospitalName}</h2>
                 <p>
                   {item.city} · {item.units} unit{item.units === 1 ? '' : 's'}
                 </p>
+                {item.urgency === 'URGENT' && (
+                  <p>
+                    <StatusBadge kind="urgency" value={item.urgency} />
+                  </p>
+                )}
                 <p>Expires {new Date(item.expiresAt).toLocaleString()}</p>
                 <Link href={`/requests/${item.id}`}>View request and matches</Link>
               </article>

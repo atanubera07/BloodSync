@@ -21,6 +21,8 @@ The canonical CSS variables live in `apps/web/app/style.css`. Each family has a 
 
 Primary 900 anchors headings and dark panels. Neutral 50 and white form page surfaces; neutral 600 and darker serve text. Supporting 600 is the brand action colour, while supporting 700 is used for text on light surfaces. Success is a separate semantic family for positive feedback. Use explicit labels with errors, success notices, and pending states.
 
+Workspace status badges pair a word with a semantic tone: green for an open request, red for urgent or expired, and neutral for standard or closed. Never show a colour without the state label.
+
 ## Layout and typography
 
 The public hero, section introductions, call to action, and desktop authentication layout use a two thirds / one third split. The application workspace allocates one quarter to navigation and three quarters to task content. At narrow widths these become a single column in reading order. IBM Plex Sans is self hosted, with a clear type hierarchy, visible focus outlines, and reduced motion support.

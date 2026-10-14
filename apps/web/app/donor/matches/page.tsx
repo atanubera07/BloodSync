@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
 import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
+import { StatusBadge } from '../../../components/StatusBadge';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
   id: string;
   bloodGroup: string;
   units: number;
-  urgency: string;
+  urgency: 'NORMAL' | 'URGENT';
   hospitalName: string;
   city: string;
   expiresAt: string;
@@ -63,7 +64,7 @@ function Matches() {
             <article className="card" key={item.id}>
               <div className="card-top">
                 <strong>{item.bloodGroup}</strong>
-                <span className="badge">{item.urgency.toLowerCase()}</span>
+                <StatusBadge kind="urgency" value={item.urgency} />
               </div>
               <h2>{item.hospitalName}</h2>
               <p>

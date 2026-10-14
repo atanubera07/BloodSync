@@ -6,13 +6,13 @@ export type BloodRequest = {
   id: string;
   bloodGroup: string;
   units: number;
-  urgency: string;
+  urgency: 'NORMAL' | 'URGENT';
   hospitalName: string;
   city: string;
   latitude: string | null;
   longitude: string | null;
   expiresAt: string;
-  status: string;
+  status: 'OPEN' | 'CLOSED' | 'EXPIRED';
   createdAt: string;
 };
 import { bloodGroups } from '@bloodsync/shared';
