@@ -11,9 +11,11 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage({ viewport: { width: 375, height: 900 } });
   await page.goto('http://localhost:3003/sign-up');
-  await page.getByLabel('Full name').fill('Browser Tester');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
+  await page.getByLabel('First name').fill('Browser');
+  await page.getByLabel('Last name').fill('Tester');
+  await page.getByLabel('Email address').fill(email);
+  await page.getByLabel('Password', { exact: true }).fill(password);
+  await page.getByRole('checkbox', { name: /I agree to the Terms and Privacy policy/ }).check();
   await page.getByRole('button', { name: 'Create account' }).click();
   await page.waitForURL('**/verify-email');
   let token;
@@ -35,7 +37,7 @@ try {
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.waitForURL('**/dashboard');
-  await page.getByText('Welcome, Browser Tester').waitFor();
+  await page.getByRole('heading', { name: 'Welcome, Browser.' }).waitFor();
   const cookies = await page.context().cookies();
   if (!cookies.some((cookie) => cookie.name === 'bs_access' && cookie.httpOnly))
     throw new Error('HttpOnly access cookie missing');

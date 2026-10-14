@@ -86,10 +86,11 @@ export default function SignUp() {
               Email address
               <input name="email" type="email" autoComplete="email" maxLength={254} required />
             </label>
-            <label>
-              Password
+            <div className="signup-password-group">
+              <label htmlFor="signup-password">Password</label>
               <span className="password-field">
                 <input
+                  id="signup-password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
@@ -108,7 +109,7 @@ export default function SignUp() {
                 </button>
               </span>
               <small>Use at least 12 characters.</small>
-            </label>
+            </div>
             <div className="signup-divider">
               <span>Optional account details</span>
             </div>

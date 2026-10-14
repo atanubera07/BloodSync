@@ -1871,6 +1871,15 @@ button.toast-close {
 .signup-form .signup-hint {
   margin: -0.35rem 0 0;
 }
+.signup-password-group {
+  display: grid;
+  gap: 0.45rem;
+}
+.signup-password-group > label {
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 0.86rem;
+}
 .password-field {
   display: flex;
   position: relative;
