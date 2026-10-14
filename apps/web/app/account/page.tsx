@@ -192,7 +192,7 @@ function AccountActions() {
   return (
     <section className="content-panel">
       <span className="workspace-kicker">Privacy controls</span>
-      <h1>Account and data</h1>
+      <h2>Account and data</h2>
       <p>
         <Link href="/privacy">Read the privacy policy</Link> before using these controls.
       </p>

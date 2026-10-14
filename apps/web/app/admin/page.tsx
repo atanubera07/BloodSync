@@ -58,19 +58,15 @@ function AdminDashboard() {
           </div>
           <span className="badge">Review queue</span>
         </div>
-        <div className="workspace-quick" aria-label="Review overview">
-          <div className="quick-card">
+        <div className="review-summary" aria-label="Review overview">
+          <div>
             <strong>{loading ? '…' : donors.length}</strong>
             <span>Profiles awaiting review</span>
           </div>
-          <div className="quick-card">
-            <strong>{loading ? '…' : events.length}</strong>
-            <span>Recent audit events</span>
-          </div>
-          <div className="quick-card">
-            <strong>Medical review</strong>
-            <span>Final eligibility belongs to qualified professionals.</span>
-          </div>
+          <p>
+            Approval enables matching. A qualified medical team still decides final donation
+            eligibility.
+          </p>
         </div>
         {notice && (
           <p role="status" className="success">
@@ -98,9 +94,14 @@ function AdminDashboard() {
                     lastDonationAt: donor.lastDonationAt ? new Date(donor.lastDonationAt) : null,
                   });
                   return (
-                    <article className="card" key={donor.id}>
-                      <h3>{donor.user.fullName}</h3>
-                      <p>{donor.user.email}</p>
+                    <article className="card review-card" key={donor.id}>
+                      <div className="review-card-header">
+                        <div>
+                          <h3>{donor.user.fullName}</h3>
+                          <p>{donor.user.email}</p>
+                        </div>
+                        <span className="badge">Awaiting review</span>
+                      </div>
                       <dl>
                         <dt>Blood group</dt>
                         <dd>{donor.bloodGroup}</dd>
@@ -121,7 +122,7 @@ function AdminDashboard() {
                           API.
                         </p>
                       )}
-                      <div className="actions">
+                      <div className="actions review-actions">
                         <button
                           disabled={pending === donor.id || screeningReasons.length > 0}
                           onClick={() => {

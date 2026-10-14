@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { AuthFrame } from '../../components/AuthFrame';
+import { safeAuthDestination } from '../../lib/auth-redirect';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -26,7 +27,8 @@ export default function SignIn() {
             ? 'Too many attempts. Please wait 15 minutes and try again.'
             : 'Invalid email or password',
         );
-      router.push('/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.push(safeAuthDestination(next));
     } catch (message) {
       setError(message instanceof Error ? message.message : 'Sign in failed. Try again.');
     } finally {

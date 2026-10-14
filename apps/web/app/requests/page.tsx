@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
 import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { StatusBadge } from '../../components/StatusBadge';
+import { EmptyState } from '../../components/EmptyState';
 import { apiJson } from '../../lib/api';
 import type { BloodRequest } from '../../components/RequestForm';
 function List() {
@@ -49,9 +50,13 @@ function List() {
           <button onClick={() => void load(0)}>Retry</button>
         </div>
       ) : items.length === 0 ? (
-        <p className="empty">
-          You have no requests yet. <Link href="/requests/new">Create your first request</Link>.
-        </p>
+        <EmptyState
+          eyebrow="No requests yet"
+          title="A request starts here."
+          action={{ href: '/requests/new', label: 'Create your first request' }}
+        >
+          Add the details confirmed by your care team when you need donor support.
+        </EmptyState>
       ) : (
         <>
           <div className="card-grid record-grid">

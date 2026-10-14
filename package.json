@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm --filter @bloodsync/shared build && pnpm -r typecheck",
     "test": "pnpm --filter @bloodsync/shared build && pnpm -r test",
+    "test:visual": "node scripts/visual-audit.mjs after",
     "db:generate": "pnpm --filter @bloodsync/api db:generate",
     "db:migrate": "node scripts/with-env.mjs pnpm --filter @bloodsync/api db:migrate",
     "lint": "eslint .",

@@ -58,68 +58,75 @@ export function RequestForm({
   }
   return (
     <form className="stacked-form" onSubmit={submit}>
-      <div className="field-grid">
+      <fieldset className="form-section">
+        <legend>What is needed</legend>
+        <p className="form-section-copy">Use details confirmed by your care team.</p>
+        <div className="field-grid">
+          <label>
+            Blood group needed
+            <select name="bloodGroup" defaultValue={initial?.bloodGroup || ''} required>
+              <option value="" disabled>
+                Select a group
+              </option>
+              {groups.map((group) => (
+                <option key={group}>{group}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Units needed
+            <input
+              name="units"
+              type="number"
+              min="1"
+              max="20"
+              defaultValue={initial?.units || 1}
+              required
+            />
+          </label>
+        </div>
+        <div className="field-grid">
+          <label>
+            Urgency
+            <select name="urgency" defaultValue={initial?.urgency || 'NORMAL'}>
+              <option value="NORMAL">Standard</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </label>
+          <label>
+            Expires at
+            <input
+              name="expiresAt"
+              type="datetime-local"
+              defaultValue={initial ? localDateTime(initial.expiresAt) : ''}
+              required
+            />
+          </label>
+        </div>
+      </fieldset>
+      <fieldset className="form-section">
+        <legend>Where care is arranged</legend>
         <label>
-          Blood group needed
-          <select name="bloodGroup" defaultValue={initial?.bloodGroup || ''} required>
-            <option value="" disabled>
-              Select a group
-            </option>
-            {groups.map((group) => (
-              <option key={group}>{group}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Units needed
+          Hospital or care center
           <input
-            name="units"
-            type="number"
-            min="1"
-            max="20"
-            defaultValue={initial?.units || 1}
+            name="hospitalName"
+            minLength={2}
+            maxLength={120}
+            defaultValue={initial?.hospitalName || ''}
             required
           />
         </label>
-      </div>
-      <div className="field-grid">
         <label>
-          Urgency
-          <select name="urgency" defaultValue={initial?.urgency || 'NORMAL'}>
-            <option value="NORMAL">Normal</option>
-            <option value="URGENT">Urgent</option>
-          </select>
-        </label>
-        <label>
-          Expires at
+          City
           <input
-            name="expiresAt"
-            type="datetime-local"
-            defaultValue={initial ? localDateTime(initial.expiresAt) : ''}
+            name="city"
+            minLength={2}
+            maxLength={100}
+            defaultValue={initial?.city || ''}
             required
           />
         </label>
-      </div>
-      <label>
-        Hospital or care center
-        <input
-          name="hospitalName"
-          minLength={2}
-          maxLength={120}
-          defaultValue={initial?.hospitalName || ''}
-          required
-        />
-      </label>
-      <label>
-        City
-        <input
-          name="city"
-          minLength={2}
-          maxLength={100}
-          defaultValue={initial?.city || ''}
-          required
-        />
-      </label>
+      </fieldset>
       <LocationFields
         initialLatitude={initial?.latitude ? Number(initial.latitude) : null}
         initialLongitude={initial?.longitude ? Number(initial.longitude) : null}

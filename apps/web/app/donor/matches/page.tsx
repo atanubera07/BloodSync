@@ -1,9 +1,9 @@
 'use client';
-import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
 import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { StatusBadge } from '../../../components/StatusBadge';
+import { EmptyState } from '../../../components/EmptyState';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
@@ -54,10 +54,13 @@ function Matches() {
           <button onClick={reload}>Retry</button>
         </div>
       ) : items.length === 0 ? (
-        <p className="empty">
-          No matching open requests right now. Check your{' '}
-          <Link href="/donor/profile">profile and approval status</Link>.
-        </p>
+        <EmptyState
+          eyebrow="No matches right now"
+          title="Check back as needs change."
+          action={{ href: '/donor/profile', label: 'Review your donor profile' }}
+        >
+          Matching depends on your approved profile, location, and active requests.
+        </EmptyState>
       ) : (
         <div className="card-grid record-grid">
           {items.map((item) => (

@@ -55,7 +55,10 @@ function UserProgress() {
               action: 'Start donor profile',
             };
   return (
-    <section className="dashboard-progress" aria-labelledby="progress-title">
+    <section
+      className={`dashboard-progress${loading ? ' is-loading' : ''}`}
+      aria-labelledby="progress-title"
+    >
       <div className="section-heading">
         <div>
           <span className="eyebrow">Current activity</span>
@@ -118,54 +121,44 @@ export default function Dashboard() {
             <div className="workspace-header">
               <div>
                 <span className="workspace-kicker">Your BloodSync space</span>
-                <h1>Hello, {user.fullName.split(' ')[0]}.</h1>
-                <p>Here is where your next helpful step begins.</p>
+                <h1>Welcome, {user.fullName.split(' ')[0]}.</h1>
+                <p>Start with the action that matters today.</p>
               </div>
               <span className="badge">
                 {user.role === 'ADMIN' ? 'Administrator' : 'Community member'}
               </span>
             </div>
-            <div className="workspace-quick" aria-label="Your account at a glance">
-              <div className="quick-card">
-                <strong>{user.role === 'ADMIN' ? 'Administrator' : 'Community member'}</strong>
-                <span>Account role</span>
-              </div>
-              <div className="quick-card">
-                <strong>Signed in</strong>
-                <span>{user.email}</span>
-              </div>
-            </div>
             {user.role === 'USER' && <UserProgress />}
             <div className="section-heading">
               <div>
-                <span className="eyebrow">Explore your tools</span>
-                <h2>What would you like to do?</h2>
+                <span className="eyebrow">Your tools</span>
+                <h2>Everything in one place.</h2>
               </div>
             </div>
-            <div className="card-grid">
+            <div className="card-grid dashboard-tool-grid">
               {user.role === 'USER' ? (
                 <>
                   <article className="card">
-                    <span className="feature-icon feature-icon-red" aria-hidden="true">
-                      ▤
+                    <span className="tool-number" aria-hidden="true">
+                      01 / REQUESTS
                     </span>
-                    <h2>Manage requests</h2>
+                    <h3>Manage requests</h3>
                     <p>Create a request and review anonymized donor matches when you need help.</p>
                     <Link href="/requests">View your requests →</Link>
                   </article>
                   <article className="card">
-                    <span className="feature-icon feature-icon-blue" aria-hidden="true">
-                      ♥
+                    <span className="tool-number" aria-hidden="true">
+                      02 / DONATING
                     </span>
-                    <h2>Become a donor</h2>
+                    <h3>Become a donor</h3>
                     <p>Submit a profile for review. You choose when to respond to a match.</p>
                     <Link href="/donor/profile">Open donor profile →</Link>
                   </article>
                   <article className="card">
-                    <span className="feature-icon feature-icon-taupe" aria-hidden="true">
-                      ◎
+                    <span className="tool-number" aria-hidden="true">
+                      03 / MATCHES
                     </span>
-                    <h2>See matching needs</h2>
+                    <h3>See matching needs</h3>
                     <p>Explore requests that match your approved donor profile.</p>
                     <Link href="/donor/matches">View matches →</Link>
                   </article>
@@ -173,18 +166,18 @@ export default function Dashboard() {
               ) : (
                 <>
                   <article className="card">
-                    <span className="feature-icon feature-icon-red" aria-hidden="true">
-                      ✓
+                    <span className="tool-number" aria-hidden="true">
+                      01 / REVIEW
                     </span>
-                    <h2>Review donors</h2>
+                    <h3>Review donors</h3>
                     <p>Check submitted donor profiles and record approval decisions.</p>
                     <Link href="/admin">Open review queue →</Link>
                   </article>
                   <article className="card">
-                    <span className="feature-icon feature-icon-blue" aria-hidden="true">
-                      ◌
+                    <span className="tool-number" aria-hidden="true">
+                      02 / ACCOUNT
                     </span>
-                    <h2>Account controls</h2>
+                    <h3>Account controls</h3>
                     <p>Manage your account data and privacy settings.</p>
                     <Link href="/account">My account →</Link>
                   </article>

@@ -6,9 +6,9 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 
 The [product refinement check](docs/PRODUCT_REFINEMENT_2026-10-11.md) records the latest workflow improvements and open product gaps.
 
-![BloodSync home page on desktop](apps/web/public/screenshots/home-1440.png)
+![BloodSync redesigned home page on desktop](docs/redesign/screenshots/after-home-1440.jpg)
 
-[View the mobile screenshot](apps/web/public/screenshots/home-320.png)
+[View the mobile redesign and before/after review](docs/redesign/REVIEW.md)
 
 ## What works
 
@@ -69,6 +69,8 @@ flowchart LR
 ## Checks and operations
 
 Run `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and `bash scripts/run-integration.sh` with PostGIS, Redis and Mailpit running. The integration script uses synthetic accounts. `scripts/browser-check.mjs` and `scripts/browser-auth-check.mjs` use a locally installed Chromium and a running web/API stack; see [RUNBOOK.md](RUNBOOK.md) for operations. Do not run browser checks against real accounts.
+
+For the frontend redesign regression pass, start the web dev server with `pnpm --filter @bloodsync/web dev`, then run `pnpm test:visual`. It uses synthetic, browser-mocked API responses and checks 18 views at five widths, representative axe accessibility rules, keyboard focus, and a protected-route return path. Set `CHROMIUM_PATH` if Chromium is not at `/usr/bin/chromium`. See the [design system](docs/DESIGN_SYSTEM.md) and [redesign review](docs/redesign/REVIEW.md).
 
 To provision an administrator, verify an account first, then run `pnpm --filter @bloodsync/api admin:provision person@example.com` from a trusted operator shell. There is no public admin signup path.
 
