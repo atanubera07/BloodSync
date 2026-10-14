@@ -9,12 +9,12 @@ export function HeroIllustration() {
       <title id="hero-art-title">An illustrated blood bag connecting a donor and a patient</title>
       <defs>
         <linearGradient id="hero-warm" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="#FFE3E5" />
-          <stop offset="1" stopColor="#F8B8BE" />
+          <stop stopColor="#FFE1E2" />
+          <stop offset="1" stopColor="#FFBDC0" />
         </linearGradient>
         <linearGradient id="hero-cool" x1="0" x2="1" y1="0" y2="1">
-          <stop stopColor="#E1E6FF" />
-          <stop offset="1" stopColor="#B9C5F5" />
+          <stop stopColor="#E1E3F0" />
+          <stop offset="1" stopColor="#C5C8DF" />
         </linearGradient>
         <filter id="hero-shadow">
           <feDropShadow dx="0" dy="18" stdDeviation="20" floodColor="#1B1E4A" floodOpacity=".12" />
@@ -36,7 +36,7 @@ export function HeroIllustration() {
         height="210"
         rx="32"
         transform="rotate(45 415 187)"
-        fill="#EEEEDF"
+        fill="#F3F3F0"
       />
       <rect
         x="309"
@@ -106,7 +106,7 @@ export function HeroIllustration() {
       <g filter="url(#hero-shadow)">
         <rect x="390" y="232" width="155" height="183" rx="30" fill="#FFFFFF" />
         <circle cx="468" cy="284" r="31" fill="#DCA786" />
-        <path d="M435 280c4-42 59-46 66-1-13-14-32-22-66 1z" fill="#30304B" />
+        <path d="M435 280c4-42 59-46 66-1-13-14-32-22-66 1z" fill="#252B58" />
         <path d="M422 381c0-34 20-54 46-54 27 0 47 20 47 54" fill="#1B1E4A" />
         <path d="M453 340l15 18 16-18" fill="none" stroke="#FFFFFF" strokeWidth="5" />
         <path d="M467 345v27" stroke="#D21319" strokeWidth="4" strokeLinecap="round" />
