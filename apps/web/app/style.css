@@ -338,7 +338,7 @@ p {
   box-shadow: 0 0 0 5px var(--support-100);
 }
 .button,
-button:not(.menu-toggle):not(.toast-close) {
+button:not(.menu-toggle):not(.toast-close):not(.password-toggle) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -359,7 +359,7 @@ button:not(.menu-toggle):not(.toast-close) {
     box-shadow 0.18s;
 }
 .button:hover,
-button:not(.menu-toggle):not(.toast-close):hover {
+button:not(.menu-toggle):not(.toast-close):not(.password-toggle):hover {
   background: var(--support-700);
   border-color: var(--support-700);
   color: #fff;
@@ -1190,6 +1190,10 @@ button:disabled {
   width: 100%;
   margin: 0.6rem 0;
 }
+.auth-recovery-link {
+  justify-self: end;
+  font-size: var(--type-support);
+}
 .auth-aside {
   position: relative;
   display: flex;
@@ -1702,7 +1706,7 @@ button.toast-close {
     min-height: 0;
   }
   .auth-layout .form-page {
-    width: min(100% - 48px, 590px);
+    width: min(100% - 48px, 440px);
     margin: 0 auto;
     padding: 2rem 0;
   }
@@ -1895,11 +1899,11 @@ button.toast-close {
 .signup-form .signup-hint {
   margin: -0.35rem 0 0;
 }
-.signup-password-group {
+.password-group {
   display: grid;
   gap: 0.45rem;
 }
-.signup-password-group > label {
+.password-group > label {
   font-weight: 600;
   color: var(--navy);
   font-size: var(--type-support);
@@ -1911,7 +1915,7 @@ button.toast-close {
 .password-field input {
   padding-right: 3.5rem;
 }
-.signup-form .password-toggle {
+.form-page .password-toggle {
   display: grid;
   place-items: center;
   position: absolute;
@@ -1923,6 +1927,12 @@ button.toast-close {
   padding: 0;
   background: transparent;
   border: 0;
+  color: var(--navy);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.form-page .password-toggle:hover {
+  background: var(--primary-50);
   color: var(--navy);
 }
 .signup-form label.signup-consent {

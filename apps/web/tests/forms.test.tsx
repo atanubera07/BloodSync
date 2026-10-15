@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { axe } from 'vitest-axe';
 import SignIn from '../app/sign-in/page';
+import SignUp from '../app/sign-up/page';
 import { RequestForm } from '../components/RequestForm';
 import { api, apiJson } from '../lib/api';
 
@@ -16,6 +17,19 @@ afterEach(() => {
 });
 
 describe('forms', () => {
+  it('toggles password visibility on sign in and sign up without submitting', () => {
+    for (const Page of [SignIn, SignUp]) {
+      const view = render(<Page />);
+      const password = screen.getByLabelText('Password');
+      expect(password).toHaveAttribute('type', 'password');
+      fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+      expect(password).toHaveAttribute('type', 'text');
+      fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+      expect(password).toHaveAttribute('type', 'password');
+      view.unmount();
+    }
+  }, 15_000);
+
   it('shows the rate limit response on sign in and permits another attempt', async () => {
     vi.mocked(api).mockResolvedValue({ ok: false, status: 429 } as Response);
     render(<SignIn />);
@@ -48,12 +62,16 @@ describe('forms', () => {
     expect(screen.getByRole('button', { name: 'Create request' })).not.toBeDisabled();
   });
 
-  it('has no detectable accessibility violations in both forms', async () => {
+  it('has no detectable accessibility violations in auth and request forms', async () => {
     const signIn = render(<SignIn />);
     expect((await axe(signIn.container)).violations).toEqual([]);
     signIn.unmount();
 
+    const signUp = render(<SignUp />);
+    expect((await axe(signUp.container)).violations).toEqual([]);
+    signUp.unmount();
+
     const request = render(<RequestForm onSaved={vi.fn()} />);
     expect((await axe(request.container)).violations).toEqual([]);
-  });
+  }, 15_000);
 });

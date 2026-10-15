@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
 import { AuthFrame } from '../../components/AuthFrame';
+import { PasswordField } from '../../components/PasswordField';
 import { safeAuthDestination } from '../../lib/auth-redirect';
 export default function SignIn() {
   const router = useRouter();
@@ -46,16 +47,13 @@ export default function SignIn() {
             Email
             <input name="email" type="email" autoComplete="email" required />
           </label>
-          <label>
-            Password
-            <input name="password" type="password" autoComplete="current-password" required />
-          </label>
+          <PasswordField id="signin-password" autoComplete="current-password" />
+          <Link className="auth-recovery-link" href="/forgot-password">
+            Forgot your password?
+          </Link>
           <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
           {error && <p role="alert">{error}</p>}
         </form>
-        <p>
-          <Link href="/forgot-password">Forgot your password?</Link>
-        </p>
         <p>
           New here? <Link href="/sign-up">Create an account</Link>
         </p>

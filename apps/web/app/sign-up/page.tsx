@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { bloodGroups } from '@bloodsync/shared';
 import { api } from '../../lib/api';
 import { AuthFrame } from '../../components/AuthFrame';
+import { PasswordField } from '../../components/PasswordField';
 
 const optional = (data: FormData, name: string) => {
   const value = String(data.get(name) || '').trim();
@@ -15,7 +16,6 @@ export default function SignUp() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
@@ -86,45 +86,13 @@ export default function SignUp() {
               Email address
               <input name="email" type="email" autoComplete="email" maxLength={254} required />
             </label>
-            <div className="signup-password-group">
-              <label htmlFor="signup-password">Password</label>
-              <span className="password-field">
-                <input
-                  id="signup-password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  aria-describedby="signup-password-hint"
-                  minLength={12}
-                  maxLength={128}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword((value) => !value)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  aria-pressed={showPassword}
-                >
-                  <svg
-                    aria-hidden="true"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" />
-                    <circle cx="12" cy="12" r="3" />
-                    {showPassword && <path d="M3 21 21 3" />}
-                  </svg>
-                </button>
-              </span>
-              <small id="signup-password-hint">Use at least 12 characters.</small>
-            </div>
+            <PasswordField
+              id="signup-password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              hint="Use at least 12 characters."
+            />
             <div className="signup-divider">
               <span>Optional account details</span>
             </div>
