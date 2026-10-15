@@ -32,7 +32,9 @@ Semantic aliases include `--color-canvas`, `--color-surface`, `--color-ink`, `--
 
 IBM Plex Sans is self-hosted under its bundled OFL license for interface text. Boska and Switzer were considered as visual references; this version keeps the existing licensed font asset and uses the system Georgia serif sparingly for expressive public headings. This avoids third-party font requests and unverified redistribution of new font assets. The stack falls back to Arial for interface text and Times New Roman for display text.
 
-Spacing tokens follow an 8-point rhythm, with 4px and 12px available for small adjustments: `--space-1` through `--space-20`. Shared radii are 6px and 12px. Type uses a clear hierarchy of page title, section heading, card heading, body text, helper text, and uppercase eyebrow. Headings use short lines and responsive sizes; body copy retains generous line height.
+Major type steps follow a golden-ratio scale from a 16px body: 1rem body, 1.618rem heading, 2.618rem title, and 4.236rem display. These are maximum roles, with responsive clamps where needed so headings still fit narrow screens. Helper text remains at least 0.875rem in the authentication forms, and body copy uses a 1.618 line height. This scale sets hierarchy without shrinking essential instructions.
+
+Spacing tokens follow an 8-point rhythm, with 4px and 12px available for small adjustments: `--space-1` through `--space-20`. Shared radii are 6px and 12px. Headings use short lines and responsive sizes.
 
 ## Components and behavior
 
@@ -44,4 +46,4 @@ Spacing tokens follow an 8-point rhythm, with 4px and 12px available for small a
 - The footer keeps prototype and medical boundaries visible, with separate exploration and information links.
 - Motion is brief and optional; reduced-motion preferences disable animation and smooth scrolling.
 
-The main content grid is capped at 1280px. Desktop landing sections use an asymmetric two-column composition; authenticated pages prioritize task content beside a narrow navigation rail. At 760px and below, these sections stack without changing reading order.
+The main content grid is capped at 1280px. Desktop landing sections use an asymmetric two-column composition; authenticated pages prioritize task content beside a narrow navigation rail. At 900px and below, navigation and authentication sections stack without changing reading order. The authentication trust panel becomes a short supporting note below the form at these widths.

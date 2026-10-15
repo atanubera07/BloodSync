@@ -159,7 +159,7 @@ for (const width of [320, 375, 768, 1024, 1440]) {
         assert.deepEqual(violations, [], `axe: ${violations.join(' | ')}`);
       }
       if (
-        (width === 375 && ['home', 'signup', 'request-new'].includes(item.name)) ||
+        (width === 375 && ['home', 'signup', 'signin', 'request-new'].includes(item.name)) ||
         (width === 1440 && ['home', 'dashboard', 'admin'].includes(item.name))
       ) {
         await page.screenshot({

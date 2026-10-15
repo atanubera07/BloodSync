@@ -55,6 +55,12 @@
   --success-900: #123b29;
   --success-950: #0b2a1d;
   --font-display: Georgia, 'Times New Roman', serif;
+  /* Major heading steps follow a 1:1.618 modular scale from the 1rem body size. */
+  --type-body: 1rem;
+  --type-heading: 1.618rem;
+  --type-title: 2.618rem;
+  --type-display: 4.236rem;
+  --type-support: 0.875rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -297,20 +303,20 @@ h3 {
   color: var(--navy);
 }
 h1 {
-  font-size: clamp(2.3rem, 5vw, 4.55rem);
+  font-size: clamp(var(--type-title), 5vw, var(--type-display));
   margin: 0.45rem 0 1.1rem;
 }
 h2 {
-  font-size: clamp(1.55rem, 2.65vw, 2.55rem);
+  font-size: clamp(var(--type-heading), 2.65vw, var(--type-title));
   margin: 0.45rem 0 1rem;
 }
 h3 {
-  font-size: 1.24rem;
+  font-size: var(--type-heading);
   margin: 0.35rem 0 0.65rem;
 }
 p {
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: var(--type-body);
+  line-height: 1.618;
   color: var(--color-ink-subtle);
 }
 .eyebrow {
@@ -318,7 +324,7 @@ p {
   align-items: center;
   gap: 0.55rem;
   color: var(--red);
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -1138,10 +1144,10 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 .form-page h1 {
-  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-size: var(--type-title);
 }
 .form-page p {
-  font-size: 0.9rem;
+  font-size: var(--type-support);
 }
 .form-page form button {
   width: 100%;
@@ -1218,7 +1224,7 @@ button:disabled {
   color: #fff;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(2rem, 2.7vw, 2.8rem);
+  font-size: clamp(var(--type-heading), 2.7vw, var(--type-title));
 }
 .auth-aside p {
   font-size: 0.94rem;
@@ -1581,7 +1587,7 @@ button.toast-close {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .site-frame {
     width: 100%;
     margin: 0;
@@ -1693,6 +1699,12 @@ button.toast-close {
   }
   .auth-layout {
     grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .auth-layout .form-page {
+    width: min(100% - 48px, 590px);
+    margin: 0 auto;
+    padding: 2rem 0;
   }
   .auth-aside {
     min-height: 0;
@@ -1703,7 +1715,19 @@ button.toast-close {
   }
   .auth-aside-content {
     max-width: 35rem;
-    padding-top: 1.5rem;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .auth-aside h2 {
+    font-size: var(--type-heading);
+    margin: 0.35rem 0 0.5rem;
+  }
+  .auth-aside p {
+    margin: 0;
+    font-size: var(--type-support);
+  }
+  .auth-principles {
+    display: none;
   }
   .workspace {
     grid-template-columns: minmax(0, 1fr);
@@ -1804,7 +1828,7 @@ button.toast-close {
 }
 .signup-heading h1 {
   margin: 0.5rem 0;
-  font-size: clamp(2rem, 4vw, 3.3rem);
+  font-size: clamp(var(--type-title), 4vw, 3.25rem);
   color: var(--navy);
 }
 .signup-heading p {
@@ -1820,7 +1844,7 @@ button.toast-close {
 }
 .signup-form h2 {
   margin: 0.5rem 0;
-  font-size: clamp(1.6rem, 2.5vw, 2.3rem);
+  font-size: clamp(var(--type-heading), 2.5vw, 2.25rem);
 }
 .signup-form > p {
   color: var(--muted);
@@ -1865,7 +1889,7 @@ button.toast-close {
 .signup-hint,
 .signup-form .field-note {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--type-support);
   font-weight: 400;
 }
 .signup-form .signup-hint {
@@ -1878,7 +1902,7 @@ button.toast-close {
 .signup-password-group > label {
   font-weight: 600;
   color: var(--navy);
-  font-size: 0.86rem;
+  font-size: var(--type-support);
 }
 .password-field {
   display: flex;
@@ -1914,7 +1938,7 @@ button.toast-close {
   margin-top: 0.1rem;
   accent-color: var(--red);
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .signup-shell {
     margin: 1rem auto 2rem;
   }

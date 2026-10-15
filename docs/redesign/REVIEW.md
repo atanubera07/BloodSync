@@ -22,6 +22,8 @@ The public route now starts with a clear request action and an alternative donor
 
 The workspace uses a narrow numbered navigation rail and a task-first content area. Donor status uses explicit wording such as **Approved for matching**; it does not imply clinical eligibility. Empty request and matching states offer one useful next action. The admin queue keeps medical review context beside the pending count.
 
+The authentication layout now stacks through 900px, with a compact trust note below the form. Sign-up fields retain full width on phones, and navigation collapses before its links crowd the header. Major type sizes follow a 1:1.618 scale from 16px body text, with responsive limits for narrow screens.
+
 Authentication, API routes, consent handling, matching rules, and role checks were preserved. After sign-in, a user returns only to an allowlisted internal task path. All visual review data is synthetic and is mocked in the browser audit script.
 
 ## Visual references
@@ -31,6 +33,7 @@ Authentication, API routes, consent handling, matching rules, and role checks we
 | Landing, desktop      | [Before](screenshots/before-home-1440.jpg)       | [After](screenshots/after-home-1440.jpg)       |
 | Landing, mobile       | [Before](screenshots/before-home-375.jpg)        | [After](screenshots/after-home-375.jpg)        |
 | Sign-up, mobile       | [Before](screenshots/before-signup-375.jpg)      | [After](screenshots/after-signup-375.jpg)      |
+| Sign-in, mobile       | —                                                | [After](screenshots/after-signin-375.jpg)      |
 | Dashboard, desktop    | [Before](screenshots/before-dashboard-1440.jpg)  | [After](screenshots/after-dashboard-1440.jpg)  |
 | Request form, mobile  | [Before](screenshots/before-request-new-375.jpg) | [After](screenshots/after-request-new-375.jpg) |
 | Admin review, desktop | [Before](screenshots/before-admin-1440.jpg)      | [After](screenshots/after-admin-1440.jpg)      |
