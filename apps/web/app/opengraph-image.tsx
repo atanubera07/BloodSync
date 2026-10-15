@@ -18,7 +18,7 @@ export default function Image() {
     >
       <div style={{ fontSize: 42, fontWeight: 700 }}>BloodSync</div>
       <div style={{ fontSize: 76, fontWeight: 800, color: '#1b1e4a', marginTop: 20 }}>
-        Make every connection count.
+        A clear path from need to response.
       </div>
       <div style={{ fontSize: 30, marginTop: 30 }}>Private blood donation coordination</div>
     </div>,

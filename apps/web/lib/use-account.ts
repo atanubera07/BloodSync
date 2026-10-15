@@ -18,8 +18,10 @@ export function useAccount(requiredRole?: 'USER' | 'ADMIN') {
       })
       .catch((message) => {
         if (active) {
-          if (message instanceof ApiError && message.status === 401) router.replace('/sign-in');
-          else setError('Unable to load your account.');
+          if (message instanceof ApiError && message.status === 401) {
+            const next = `${window.location.pathname}${window.location.search}`;
+            router.replace(`/sign-in?next=${encodeURIComponent(next)}`);
+          } else setError('Unable to load your account.');
         }
       })
       .finally(() => {

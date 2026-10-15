@@ -43,17 +43,20 @@ export function HeaderNav() {
         className={`main-nav${menuOpen ? ' is-open' : ''}`}
         aria-label="Main navigation"
       >
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
+        <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}>
+          Home
+        </Link>
+        <Link href="/#how-it-works">How it works</Link>
         {account?.role === 'ADMIN' ? (
           <>
-            <Link href="/admin">Approvals</Link>
-            <Link href="/contact">Contact</Link>
+            <Link href="/admin" aria-current={pathname === '/admin' ? 'page' : undefined}>
+              Donor review
+            </Link>
           </>
         ) : (
           <>
-            <Link href={account ? '/donor/profile' : '/sign-up'}>Donate</Link>
-            <Link href={account ? '/requests' : '/sign-up'}>Requests</Link>
+            <Link href="/donor/profile">Donate</Link>
+            <Link href="/requests/new">Request blood</Link>
           </>
         )}
         {!ready ? (

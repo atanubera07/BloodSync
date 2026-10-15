@@ -29,7 +29,7 @@ export function ToastHost() {
   }, []);
 
   return (
-    <div className="toast-stack" aria-label="Notifications">
+    <div className="toast-stack" role="region" aria-label="Notifications">
       {toasts.map((toast) => (
         <div
           className={`toast toast-${toast.type}`}

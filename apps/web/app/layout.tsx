@@ -43,21 +43,29 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           </header>
           <main id="main-content">{children}</main>
           <footer className="site-footer">
-            <div>
+            <div className="footer-intro">
               <Link className="footer-brand" href="/">
                 BloodSync<span className="brand-accent">.</span>
               </Link>
-              <p>Thoughtful connections when they matter most.</p>
-              <small>This service does not replace emergency medical care.</small>
+              <p>Clearer steps between a request and a response.</p>
+              <small>
+                Prototype for synthetic data. Medical decisions belong to qualified teams.
+              </small>
             </div>
-            <nav aria-label="Footer navigation">
-              <Link href="/about">About</Link>
-              <Link href="/faq">FAQ</Link>
-              <Link href="/contact">Contact</Link>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-              <Link href="/account">My data</Link>
-            </nav>
+            <div className="footer-navigation">
+              <nav aria-label="Explore BloodSync">
+                <strong>Explore</strong>
+                <Link href="/about">About</Link>
+                <Link href="/faq">Questions</Link>
+                <Link href="/contact">Contact</Link>
+              </nav>
+              <nav aria-label="Privacy and account">
+                <strong>Your information</strong>
+                <Link href="/privacy">Privacy</Link>
+                <Link href="/terms">Terms</Link>
+                <Link href="/account">My data</Link>
+              </nav>
+            </div>
           </footer>
         </div>
         <ToastHost />
