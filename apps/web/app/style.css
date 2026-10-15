@@ -1909,19 +1909,21 @@ button.toast-close {
   position: relative;
 }
 .password-field input {
-  padding-right: 4.2rem;
+  padding-right: 3.5rem;
 }
 .signup-form .password-toggle {
+  display: grid;
+  place-items: center;
   position: absolute;
   right: 0.35rem;
-  top: 0.3rem;
-  width: auto;
-  min-height: 35px;
-  padding: 0 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
   background: transparent;
   border: 0;
   color: var(--navy);
-  font-size: 0.8rem;
 }
 .signup-form label.signup-consent {
   display: flex;

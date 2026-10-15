@@ -94,6 +94,7 @@ export default function SignUp() {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
+                  aria-describedby="signup-password-hint"
                   minLength={12}
                   maxLength={128}
                   required
@@ -105,10 +106,24 @@ export default function SignUp() {
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  <svg
+                    aria-hidden="true"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z" />
+                    <circle cx="12" cy="12" r="3" />
+                    {showPassword && <path d="M3 21 21 3" />}
+                  </svg>
                 </button>
               </span>
-              <small>Use at least 12 characters.</small>
+              <small id="signup-password-hint">Use at least 12 characters.</small>
             </div>
             <div className="signup-divider">
               <span>Optional account details</span>
