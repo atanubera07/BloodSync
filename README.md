@@ -54,7 +54,7 @@ flowchart LR
     Browser -->|same-origin /api, session cookies| API[NestJS API]
     Web -->|apiJson, CSRF and refresh handling| API
     API -->|requests and matching| DB[(PostgreSQL + PostGIS)]
-    API -->|rate limits| Redis[(Redis)]
+    API -->|rate limits and registration Bloom filter| Redis[(Redis)]
     API -->|verification and reset jobs| Queue[Vercel Queue]
     Queue --> Consumer[Next.js queue consumer]
     Consumer -->|internal authenticated call| API
@@ -81,6 +81,8 @@ Defaults in `packages/shared/src/eligibility.ts`: age **18–65 years**, minimum
 Donor contact details are shown to a request owner only after that donor expresses interest with active consent for the current privacy version. Coordinates are rounded to two decimal places before storage. Withdrawing consent stops matching and removes interests. Account deletion cascades owned data and sessions; only anonymous audit event type, time and result remain. A local legal reviewer must set a retention policy before real use.
 
 Signup keeps the generic duplicate-email `400` response, “Unable to create account with these details”. This avoids a direct account lookup message while telling the caller that signup failed; returning success for an account that was not created would be misleading. If the account is created but email queuing fails, signup still succeeds and the user can request a fresh link on the verification page. Password reset and verification requests enqueue the same job for existing and missing accounts and return a generic response. Email delivery can still reveal an account to someone who controls its mailbox, so rate limits apply.
+
+Registration uses a Redis bitmap-backed Bloom filter to avoid a duplicate-email database read when an address is absent from the filter. It stores HMAC-derived bit positions, not email strings, and uses 128 KiB for approximately 0.7% false positives at 100,000 entries. A positive result is checked in PostgreSQL. The filter is not preloaded with older accounts, so a negative result can still race or miss an existing account; PostgreSQL's unique email constraint remains authoritative and returns the same generic error. Redis failures fall back to the database. No RedisBloom module or new environment variable is required.
 
 ## Roadmap and contribution
 

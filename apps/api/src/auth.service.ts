@@ -14,6 +14,7 @@ import { createHmac, createHash, hkdfSync, randomBytes, timingSafeEqual } from '
 import { ConfigService, readConfig } from './config';
 import { MailService } from './mail.service';
 import { ApiLogger } from './logger';
+import { RegistrationBloom } from './registration-bloom';
 
 const ACCESS_MS = 15 * 60_000;
 const REFRESH_MS = 7 * 24 * 60 * 60_000;
@@ -28,15 +29,24 @@ export class AuthService {
     private readonly db: PrismaService,
     private readonly mail: MailService,
     private readonly config?: ConfigService,
+    private readonly bloom?: RegistrationBloom,
   ) {}
   async register(input: z.infer<typeof registerSchema>) {
     const data = registerSchema.safeParse(input);
     if (!data.success) throw new BadRequestException('Invalid registration details');
-    const exists = await this.db.user.findUnique({
-      where: { email: data.data.email },
-      select: { id: true },
-    });
-    if (exists) throw new BadRequestException('Unable to create account with these details');
+    let mightExist = true;
+    try {
+      if (this.bloom) mightExist = await this.bloom.mightContain(data.data.email);
+    } catch {
+      // Redis is only an optimization; PostgreSQL remains authoritative.
+    }
+    if (mightExist) {
+      const exists = await this.db.user.findUnique({
+        where: { email: data.data.email },
+        select: { id: true },
+      });
+      if (exists) throw new BadRequestException('Unable to create account with these details');
+    }
     let user;
     try {
       user = await this.db.user.create({
@@ -57,6 +67,11 @@ export class AuthService {
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002')
         throw new BadRequestException('Unable to create account with these details');
       throw error;
+    }
+    try {
+      await this.bloom?.add(user.email);
+    } catch {
+      // A missed entry only costs a future database lookup or unique-key rejection.
     }
     try {
       await this.mail.enqueue(user.email, 'VERIFY');

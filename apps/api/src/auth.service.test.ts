@@ -4,8 +4,69 @@ import { AuthService } from './auth.service';
 import type { PrismaService } from './prisma.service';
 import type { MailService } from './mail.service';
 import type { RegisterInput } from '@bloodsync/shared';
+import type { RegistrationBloom } from './registration-bloom';
 
 describe('AuthService security boundaries', () => {
+  const signup = {
+    email: 'synthetic@example.test',
+    password: 'synthetic-long-password',
+    fullName: 'Synthetic User',
+    acceptTerms: true as const,
+  };
+
+  it('uses a Bloom miss to skip a duplicate lookup while keeping the unique index authoritative', async () => {
+    const created = { id: 'synthetic-id', email: signup.email };
+    const findUnique = vi.fn();
+    const create = vi.fn().mockResolvedValue(created);
+    const bloom = {
+      mightContain: vi.fn().mockResolvedValue(false),
+      add: vi.fn().mockResolvedValue(undefined),
+    } as unknown as RegistrationBloom;
+    const auth = new AuthService(
+      { user: { findUnique, create } } as unknown as PrismaService,
+      { enqueue: vi.fn() } as unknown as MailService,
+      undefined,
+      bloom,
+    );
+
+    await expect(auth.register(signup)).resolves.toEqual(created);
+    expect(findUnique).not.toHaveBeenCalled();
+    expect(bloom.add).toHaveBeenCalledWith(signup.email);
+
+    create.mockRejectedValueOnce({ code: 'P2002' });
+    await expect(auth.register(signup)).rejects.toThrow(
+      'Unable to create account with these details',
+    );
+  });
+
+  it('checks PostgreSQL on a Bloom hit and if Redis fails', async () => {
+    const findUnique = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'existing' })
+      .mockResolvedValueOnce(null);
+    const create = vi.fn().mockResolvedValue({ id: 'new', email: signup.email });
+    const bloom = {
+      mightContain: vi
+        .fn()
+        .mockResolvedValueOnce(true)
+        .mockRejectedValueOnce(new Error('Redis unavailable')),
+      add: vi.fn().mockRejectedValue(new Error('Redis unavailable')),
+    } as unknown as RegistrationBloom;
+    const auth = new AuthService(
+      { user: { findUnique, create } } as unknown as PrismaService,
+      { enqueue: vi.fn() } as unknown as MailService,
+      undefined,
+      bloom,
+    );
+
+    await expect(auth.register(signup)).rejects.toThrow(
+      'Unable to create account with these details',
+    );
+    expect(create).not.toHaveBeenCalled();
+    await expect(auth.register(signup)).resolves.toMatchObject({ id: 'new' });
+    expect(findUnique).toHaveBeenCalledTimes(2);
+  });
+
   it('stores optional signup details and rejects missing terms consent', async () => {
     const create = vi
       .fn()

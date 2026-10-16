@@ -45,7 +45,12 @@ function parse(buffer: Buffer, offset = 0): [unknown, number] | undefined {
 export class RateLimitRedis {
   readonly client: {
     ping: () => Promise<string>;
-    eval: (script: string, keyCount: number, key: string, expiry: number) => Promise<unknown>;
+    eval: (
+      script: string,
+      keyCount: number,
+      key: string,
+      ...args: (string | number)[]
+    ) => Promise<unknown>;
   };
 
   constructor(config: ConfigService) {
@@ -100,7 +105,7 @@ export class RateLimitRedis {
       });
     this.client = {
       ping: () => execute(['PING']) as Promise<string>,
-      eval: (script, keyCount, key, expiry) => execute(['EVAL', script, keyCount, key, expiry]),
+      eval: (script, keyCount, key, ...args) => execute(['EVAL', script, keyCount, key, ...args]),
     };
   }
 }
