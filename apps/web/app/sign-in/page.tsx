@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { AuthFrame } from '../../components/AuthFrame';
+import { PasswordField } from '../../components/PasswordField';
+import { safeAuthDestination } from '../../lib/auth-redirect';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
@@ -25,7 +28,8 @@ export default function SignIn() {
             ? 'Too many attempts. Please wait 15 minutes and try again.'
             : 'Invalid email or password',
         );
-      router.push('/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.push(safeAuthDestination(next));
     } catch (message) {
       setError(message instanceof Error ? message.message : 'Sign in failed. Try again.');
     } finally {
@@ -33,26 +37,27 @@ export default function SignIn() {
     }
   }
   return (
-    <section className="form-page">
-      <h1>Sign in</h1>
-      <form onSubmit={submit}>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="email" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" autoComplete="current-password" required />
-        </label>
-        <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
-        {error && <p role="alert">{error}</p>}
-      </form>
-      <p>
-        <Link href="/forgot-password">Forgot your password?</Link>
-      </p>
-      <p>
-        New here? <Link href="/sign-up">Create an account</Link>
-      </p>
-    </section>
+    <AuthFrame>
+      <section className="form-page">
+        <span className="eyebrow">Welcome back</span>
+        <h1>Good to see you again.</h1>
+        <p>Sign in to manage your requests, donor profile, and account.</p>
+        <form onSubmit={submit}>
+          <label>
+            Email
+            <input name="email" type="email" autoComplete="email" required />
+          </label>
+          <PasswordField id="signin-password" autoComplete="current-password" />
+          <Link className="auth-recovery-link" href="/forgot-password">
+            Forgot your password?
+          </Link>
+          <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
+          {error && <p role="alert">{error}</p>}
+        </form>
+        <p>
+          New here? <Link href="/sign-up">Create an account</Link>
+        </p>
+      </section>
+    </AuthFrame>
   );
 }

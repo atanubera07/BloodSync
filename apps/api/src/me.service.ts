@@ -6,13 +6,44 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import type { Actor } from './actor';
-import * as argon2 from 'argon2';
-import { PRIVACY_VERSION, consentSchema, deleteAccountSchema } from '@bloodsync/shared';
+import { verifyPassword } from './password';
+import {
+  PRIVACY_VERSION,
+  accountDetailsSchema,
+  consentSchema,
+  deleteAccountSchema,
+} from '@bloodsync/shared';
 import type { z } from 'zod';
 
 @Injectable()
 export class MeService {
   constructor(private readonly db: PrismaService) {}
+  private readonly accountSelect = {
+    fullName: true,
+    email: true,
+    phoneNumber: true,
+    declaredBloodGroup: true,
+    postalAddress: true,
+    city: true,
+    stateRegion: true,
+  } as const;
+  async details(actor: Actor) {
+    const details = await this.db.user.findUnique({
+      where: { id: actor.id },
+      select: this.accountSelect,
+    });
+    if (!details) throw new UnauthorizedException();
+    return details;
+  }
+  async updateDetails(actor: Actor, input: z.infer<typeof accountDetailsSchema>) {
+    const parsed = accountDetailsSchema.safeParse(input);
+    if (!parsed.success) throw new BadRequestException('Invalid account details');
+    return this.db.user.update({
+      where: { id: actor.id },
+      data: parsed.data,
+      select: this.accountSelect,
+    });
+  }
   async consent(actor: Actor) {
     return this.db.consentRecord.findFirst({
       where: { userId: actor.id },
@@ -65,6 +96,12 @@ export class MeService {
         id: true,
         email: true,
         fullName: true,
+        phoneNumber: true,
+        declaredBloodGroup: true,
+        postalAddress: true,
+        city: true,
+        stateRegion: true,
+        termsAcceptedAt: true,
         role: true,
         emailVerifiedAt: true,
         createdAt: true,
@@ -99,7 +136,7 @@ export class MeService {
     if (typeof password !== 'string')
       throw new BadRequestException('Password confirmation required');
     const user = await this.db.user.findUnique({ where: { id: actor.id } });
-    if (!user || !(await argon2.verify(user.passwordHash, password)))
+    if (!user || !(await verifyPassword(user.passwordHash, password)))
       throw new ForbiddenException('Password confirmation failed');
     const donor = await this.db.donorProfile.findUnique({
       where: { userId: actor.id },

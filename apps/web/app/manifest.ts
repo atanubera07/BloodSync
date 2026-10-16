@@ -6,8 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Private blood donation coordination',
     start_url: '/',
     display: 'standalone',
-    background_color: '#fffaf8',
-    theme_color: '#a32635',
+    background_color: '#fafaf9',
+    theme_color: '#1b1e4a',
     icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
   };
 }

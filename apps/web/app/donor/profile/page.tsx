@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
+import { StatusBadge } from '../../../components/StatusBadge';
 import { LocationFields, optionalCoordinates } from '../../../components/LocationFields';
 import { api, apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
@@ -15,7 +17,7 @@ type Profile = {
   latitude: string | null;
   longitude: string | null;
   consentToMatch: boolean;
-  status: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
 import { bloodGroups, PRIVACY_VERSION } from '@bloodsync/shared';
 const groups = bloodGroups;
@@ -70,6 +72,7 @@ function ProfileForm() {
   }
   return (
     <section className="content-panel">
+      <span className="workspace-kicker">Donor details</span>
       <h1>Donor profile</h1>
       <p>
         Screening information helps an administrator review your profile. Final eligibility is
@@ -84,83 +87,97 @@ function ProfileForm() {
         </div>
       ) : (
         <>
-          <p className="status-line">
-            Status: <strong>{profile?.status.toLowerCase() || 'Not submitted'}</strong>
-          </p>
+          <div className="donor-status">
+            <span>Matching status</span>
+            {profile ? (
+              <StatusBadge kind="donor" value={profile.status} />
+            ) : (
+              <strong>Not submitted</strong>
+            )}
+          </div>
           <form key={profile?.id || 'new'} onSubmit={submit} className="stacked-form">
-            <label>
-              Blood group
-              <select name="bloodGroup" defaultValue={profile?.bloodGroup || ''} required>
-                <option value="" disabled>
-                  Select a group
-                </option>
-                {groups.map((group) => (
-                  <option key={group}>{group}</option>
-                ))}
-              </select>
-            </label>
-            <div className="field-grid">
+            <fieldset className="form-section">
+              <legend>Screening details</legend>
+              <p className="form-section-copy">
+                An administrator reviews these details before matching begins.
+              </p>
               <label>
-                Date of birth
+                Blood group
+                <select name="bloodGroup" defaultValue={profile?.bloodGroup || ''} required>
+                  <option value="" disabled>
+                    Select a group
+                  </option>
+                  {groups.map((group) => (
+                    <option key={group}>{group}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="field-grid">
+                <label>
+                  Date of birth
+                  <input
+                    name="birthDate"
+                    type="date"
+                    defaultValue={profile?.birthDate?.slice(0, 10) || ''}
+                    required
+                  />
+                </label>
+                <label>
+                  Weight (kg)
+                  <input
+                    name="weightKg"
+                    type="number"
+                    min="1"
+                    max="300"
+                    step="0.1"
+                    defaultValue={profile?.weightKg || ''}
+                    required
+                  />
+                </label>
+              </div>
+              <label>
+                Last donation date, if any
                 <input
-                  name="birthDate"
+                  name="lastDonationAt"
                   type="date"
-                  defaultValue={profile?.birthDate?.slice(0, 10) || ''}
-                  required
+                  defaultValue={profile?.lastDonationAt?.slice(0, 10) || ''}
                 />
               </label>
               <label>
-                Weight (kg)
+                City
                 <input
-                  name="weightKg"
-                  type="number"
-                  min="1"
-                  max="300"
-                  step="0.1"
-                  defaultValue={profile?.weightKg || ''}
+                  name="city"
+                  minLength={2}
+                  maxLength={100}
+                  defaultValue={profile?.city || ''}
                   required
                 />
               </label>
-            </div>
-            <label>
-              Last donation date, if any
-              <input
-                name="lastDonationAt"
-                type="date"
-                defaultValue={profile?.lastDonationAt?.slice(0, 10) || ''}
-              />
-            </label>
-            <label>
-              City
-              <input
-                name="city"
-                minLength={2}
-                maxLength={100}
-                defaultValue={profile?.city || ''}
-                required
-              />
-            </label>
+            </fieldset>
             <LocationFields
               initialLatitude={profile?.latitude ? Number(profile.latitude) : null}
               initialLongitude={profile?.longitude ? Number(profile.longitude) : null}
             />
-            <label className="check">
-              <input name="healthProcessing" type="checkbox" required />I consent to processing my
-              screening details under the <Link href="/privacy">privacy policy</Link> (version
-              {PRIVACY_VERSION}).
-            </label>
-            <label className="check">
-              <input name="contactSharing" type="checkbox" required />I consent to sharing my
-              account name and email with a request owner if I express interest.
-            </label>
-            <label className="check">
-              <input
-                name="consentToMatch"
-                type="checkbox"
-                defaultChecked={profile?.consentToMatch || false}
-              />{' '}
-              I agree to appear in anonymized donor matches.
-            </label>
+            <fieldset className="form-section">
+              <legend>Your choices and consent</legend>
+              <label className="check">
+                <input name="healthProcessing" type="checkbox" required />I consent to processing my
+                screening details under the <Link href="/privacy">privacy policy</Link> (version
+                {PRIVACY_VERSION}).
+              </label>
+              <label className="check">
+                <input name="contactSharing" type="checkbox" required />I consent to sharing my
+                account name and email with a request owner if I express interest.
+              </label>
+              <label className="check">
+                <input
+                  name="consentToMatch"
+                  type="checkbox"
+                  defaultChecked={profile?.consentToMatch || false}
+                />{' '}
+                I agree to appear in anonymized donor matches.
+              </label>
+            </fieldset>
             <p className="hint">
               Screening defaults: age 18–65, weight at least 45 kg, and 90 days since the last
               donation. These are subject to local clinical review.
@@ -168,6 +185,7 @@ function ProfileForm() {
             <button disabled={saving}>{saving ? 'Saving…' : 'Save for review'}</button>
           </form>
           <button
+            className="secondary"
             type="button"
             onClick={async () => {
               try {
@@ -199,5 +217,13 @@ function ProfileForm() {
   );
 }
 export default function DonorProfilePage() {
-  return <AccountGate role="USER">{() => <ProfileForm />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/profile">
+          <ProfileForm />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

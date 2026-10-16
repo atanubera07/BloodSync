@@ -39,6 +39,12 @@ model User {
   email               String            @unique @db.VarChar(254)
   passwordHash        String
   fullName            String            @db.VarChar(100)
+  phoneNumber         String?           @db.VarChar(24)
+  declaredBloodGroup  String?           @db.VarChar(3)
+  postalAddress       String?           @db.VarChar(250)
+  city                String?           @db.VarChar(100)
+  stateRegion         String?           @db.VarChar(100)
+  termsAcceptedAt     DateTime?
   role                Role              @default(USER)
   emailVerifiedAt     DateTime?
   failedLoginAttempts Int               @default(0)

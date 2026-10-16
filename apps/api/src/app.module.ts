@@ -18,11 +18,15 @@ import { MeController } from './me.controller';
 import { MeService } from './me.service';
 import { AuditInterceptor } from './audit.interceptor';
 import { RateLimitRedis } from './rate-limit-redis';
+import { RegistrationBloom } from './registration-bloom';
 import { ConfigService } from './config';
+import { CronController, InternalController } from './internal.controller';
 @Module({
   controllers: [
     AuthController,
     HealthController,
+    InternalController,
+    CronController,
     MeController,
     DonorController,
     RequestController,
@@ -32,6 +36,7 @@ import { ConfigService } from './config';
     PrismaService,
     ConfigService,
     RateLimitRedis,
+    RegistrationBloom,
     MailService,
     AuthService,
     AuthGuard,

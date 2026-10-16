@@ -4,7 +4,8 @@ export const metadata = {
 };
 export default function PrivacyPage() {
   return (
-    <article className="content-panel">
+    <article className="content-panel editorial-page">
+      <span className="eyebrow">Your information</span>
       <h1>Privacy</h1>
       <p>
         <strong>Template: legal review required before real-world use.</strong> BloodSync is an
@@ -12,10 +13,12 @@ export default function PrivacyPage() {
       </p>
       <h2>Information and purpose</h2>
       <p>
-        We store your name, email, password hash, sessions, consent choices and security events for
-        account access. Donor profiles contain blood group, birth date, weight, last donation date,
-        city and optional approximate coordinates for screening and matching. Patient requests
-        contain requested group, units, urgency, hospital, city and expiry.
+        We store your name, email, password hash, optional phone number, self-reported blood group,
+        address, city and state, your terms acceptance time, sessions, consent choices and security
+        events for account access. Account details can be downloaded or deleted from your account
+        page. Donor profiles contain blood group, birth date, weight, last donation date, city and
+        optional approximate coordinates for screening and matching. Patient requests contain
+        requested group, units, urgency, hospital, city and expiry.
       </p>
       <h2>Sharing</h2>
       <p>
@@ -25,11 +28,12 @@ export default function PrivacyPage() {
       </p>
       <h2>Control and retention</h2>
       <p>
-        You can withdraw donor consent on the donor profile page, export your data, or delete your
-        account from the account page. Withdrawal stops future matching and removes existing
-        interests. Deleting an account removes its profiles, requests, sessions and tokens.
-        Anonymous audit event type, time and result remain for security review. Production retention
-        periods and legal basis require local legal review.
+        You can review and update optional account details, export your data, or delete your account
+        from the account page. You can withdraw donor consent on the donor profile page. Withdrawal
+        stops future matching and removes existing interests. Deleting an account removes its
+        profiles, requests, sessions and tokens. Anonymous audit event type, time and result remain
+        for security review. Production retention periods and legal basis require local legal
+        review.
       </p>
       <p>
         Questions and private security reports:{' '}

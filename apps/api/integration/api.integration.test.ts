@@ -67,6 +67,7 @@ async function account(label: string) {
     email,
     password,
     fullName: `${label} Tester`,
+    acceptTerms: true,
   });
   const token = await tokenFor(email, 'Verify your BloodSync email');
   await check(client, 'POST', '/auth/verify-email', 200, { token });
@@ -82,11 +83,13 @@ describe('PostGIS, Redis and Mailpit integration', () => {
       email,
       password,
       fullName: 'Auth Tester',
+      acceptTerms: true,
     });
     await check(client, 'POST', '/auth/register', 400, {
       email,
       password,
       fullName: 'Auth Tester',
+      acceptTerms: true,
     });
     await check(client, 'POST', '/auth/login', 401, { email, password });
     const verify = await tokenFor(email, 'Verify your BloodSync email');

@@ -40,6 +40,16 @@ describe('shared Redis limiter', () => {
   it.each([
     ['GET', '/v1/me/export', 5],
     ['DELETE', '/v1/me', 3],
+    ['GET', '/api/v1/me/export', 5],
+    ['DELETE', '/api/v1/me', 3],
+    ['PATCH', '/v1/me/details', 20],
+    ['PUT', '/v1/donors/me', 12],
+    ['POST', '/v1/requests', 30],
+    ['PATCH', '/v1/requests/123', 30],
+    ['DELETE', '/v1/requests/123', 30],
+    ['POST', '/v1/admin/donors/123/approve', 30],
+    ['POST', '/v1/admin/donors/123/reject', 30],
+    ['POST', '/v1/cron/unknown', 60],
   ])('limits %s %s', async (method, path, limit) => {
     let count = 0;
     const redis = { eval: vi.fn(async () => [++count, 60]) } as unknown as Redis;
@@ -51,5 +61,32 @@ describe('shared Redis limiter', () => {
     expect(next).toHaveBeenCalledTimes(Number(limit));
     await rateLimit(redis)(req, res, next);
     expect(status).toHaveBeenCalledWith(429);
+  });
+  it('enforces a user bucket across different IP addresses', async () => {
+    const counts = new Map<string, number>();
+    const redis = {
+      eval: vi.fn(async (_script: string, _keys: number, key: string) => {
+        const count = (counts.get(key) || 0) + 1;
+        counts.set(key, count);
+        return [count, 60];
+      }),
+    } as unknown as Redis;
+    const identify = vi.fn(async () => 'user-1');
+    const limiter = rateLimit(redis, identify);
+    const next = vi.fn();
+    const status = vi.fn().mockReturnThis();
+    const res = { status, json: vi.fn(), setHeader: vi.fn() } as unknown as Response;
+    for (let n = 0; n < 13; n++) {
+      const req = {
+        method: 'PUT',
+        path: '/v1/donors/me',
+        ip: `192.0.2.${n + 1}`,
+        socket: {},
+      } as Request;
+      await limiter(req, res, next);
+    }
+    expect(next).toHaveBeenCalledTimes(12);
+    expect(status).toHaveBeenCalledWith(429);
+    expect(identify).toHaveBeenCalledTimes(13);
   });
 });

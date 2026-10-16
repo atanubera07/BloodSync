@@ -1,14 +1,16 @@
 'use client';
-import Link from 'next/link';
 import { useState } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
+import { StatusBadge } from '../../../components/StatusBadge';
+import { EmptyState } from '../../../components/EmptyState';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
   id: string;
   bloodGroup: string;
   units: number;
-  urgency: string;
+  urgency: 'NORMAL' | 'URGENT';
   hospitalName: string;
   city: string;
   expiresAt: string;
@@ -52,17 +54,20 @@ function Matches() {
           <button onClick={reload}>Retry</button>
         </div>
       ) : items.length === 0 ? (
-        <p className="empty">
-          No matching open requests right now. Check your{' '}
-          <Link href="/donor/profile">profile and approval status</Link>.
-        </p>
+        <EmptyState
+          eyebrow="No matches right now"
+          title="Check back as needs change."
+          action={{ href: '/donor/profile', label: 'Review your donor profile' }}
+        >
+          Matching depends on your approved profile, location, and active requests.
+        </EmptyState>
       ) : (
-        <div className="card-grid">
+        <div className="card-grid record-grid">
           {items.map((item) => (
             <article className="card" key={item.id}>
               <div className="card-top">
                 <strong>{item.bloodGroup}</strong>
-                <span className="badge">{item.urgency.toLowerCase()}</span>
+                <StatusBadge kind="urgency" value={item.urgency} />
               </div>
               <h2>{item.hospitalName}</h2>
               <p>
@@ -91,5 +96,13 @@ function Matches() {
   );
 }
 export default function DonorMatchesPage() {
-  return <AccountGate role="USER">{() => <Matches />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/donor/matches">
+          <Matches />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

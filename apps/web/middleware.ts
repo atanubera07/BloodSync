@@ -27,4 +27,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   return response;
 }
-export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'] };
+export const config = {
+  runtime: 'nodejs',
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};

@@ -2,6 +2,9 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AccountGate } from '../../components/AccountGate';
+import { WorkspaceFrame } from '../../components/WorkspaceFrame';
+import { StatusBadge } from '../../components/StatusBadge';
+import { EmptyState } from '../../components/EmptyState';
 import { apiJson } from '../../lib/api';
 import type { BloodRequest } from '../../components/RequestForm';
 function List() {
@@ -47,22 +50,31 @@ function List() {
           <button onClick={() => void load(0)}>Retry</button>
         </div>
       ) : items.length === 0 ? (
-        <p className="empty">
-          You have no requests yet. <Link href="/requests/new">Create your first request</Link>.
-        </p>
+        <EmptyState
+          eyebrow="No requests yet"
+          title="A request starts here."
+          action={{ href: '/requests/new', label: 'Create your first request' }}
+        >
+          Add the details confirmed by your care team when you need donor support.
+        </EmptyState>
       ) : (
         <>
-          <div className="card-grid">
+          <div className="card-grid record-grid">
             {items.map((item) => (
               <article className="card" key={item.id}>
                 <div className="card-top">
                   <strong>{item.bloodGroup}</strong>
-                  <span className="badge">{item.status.toLowerCase()}</span>
+                  <StatusBadge kind="request" value={item.status} />
                 </div>
                 <h2>{item.hospitalName}</h2>
                 <p>
                   {item.city} · {item.units} unit{item.units === 1 ? '' : 's'}
                 </p>
+                {item.urgency === 'URGENT' && (
+                  <p>
+                    <StatusBadge kind="urgency" value={item.urgency} />
+                  </p>
+                )}
                 <p>Expires {new Date(item.expiresAt).toLocaleString()}</p>
                 <Link href={`/requests/${item.id}`}>View request and matches</Link>
               </article>
@@ -79,5 +91,13 @@ function List() {
   );
 }
 export default function RequestsPage() {
-  return <AccountGate role="USER">{() => <List />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/requests">
+          <List />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

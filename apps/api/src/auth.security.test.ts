@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as argon2 from 'argon2';
+import { hashPassword } from './password';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthService, hashToken, MAX_FAILED_LOGINS } from './auth.service';
 import type { PrismaService } from './prisma.service';
@@ -55,7 +55,7 @@ describe('refresh rotation', () => {
 
 describe('account lockout', () => {
   it('locks after repeated bad passwords and blocks the correct password until expiry', async () => {
-    const passwordHash = await argon2.hash('correct-long-password');
+    const passwordHash = await hashPassword('correct-long-password');
     const user = {
       id: '550e8400-e29b-41d4-a716-446655440000',
       email: 'donor@example.test',

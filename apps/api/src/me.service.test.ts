@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as argon2 from 'argon2';
+import { hashPassword } from './password';
 import { ForbiddenException } from '@nestjs/common';
 import { MeService } from './me.service';
 import { PRIVACY_VERSION } from '@bloodsync/shared';
@@ -15,6 +15,31 @@ const actor = {
   fullName: 'User',
 };
 describe('privacy controls', () => {
+  it('reads and updates only the current account for either role', async () => {
+    const findUnique = vi.fn().mockResolvedValue({ email: actor.email, city: 'Old City' });
+    const update = vi.fn().mockResolvedValue({ email: actor.email, city: 'New City' });
+    const db = { user: { findUnique, update } } as unknown as PrismaService;
+    const me = new MeService(db);
+    for (const role of ['USER', 'ADMIN'] as const) {
+      const own = { ...actor, role, id: `${role}-account` };
+      await me.details(own);
+      await me.updateDetails(own, { city: 'New City', phoneNumber: null });
+      expect(findUnique).toHaveBeenLastCalledWith(
+        expect.objectContaining({ where: { id: own.id } }),
+      );
+      expect(update).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: { id: own.id },
+          data: { city: 'New City', phoneNumber: null },
+          select: expect.not.objectContaining({ passwordHash: true }),
+        }),
+      );
+    }
+    await expect(
+      me.updateDetails(actor, { city: 'New City', role: 'ADMIN' } as never),
+    ).rejects.toThrow('Invalid account details');
+    expect(update).toHaveBeenCalledTimes(2);
+  });
   it('blocks donor profile creation before active consent', async () => {
     const db = {
       consentRecord: { findFirst: vi.fn().mockResolvedValue(null) },
@@ -78,7 +103,7 @@ describe('privacy controls', () => {
     );
   });
   it('requires the password and anonymizes audit records before cascading account deletion', async () => {
-    const hash = await argon2.hash('correct-password');
+    const hash = await hashPassword('correct-password');
     const updateMany = vi.fn();
     const remove = vi.fn();
     const tx = { auditEvent: { updateMany }, user: { delete: remove } };

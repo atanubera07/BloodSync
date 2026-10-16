@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@bloodsync/shared": "workspace:*",
+    "@vercel/queue": "^0.8.0",
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

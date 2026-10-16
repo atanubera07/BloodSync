@@ -11,14 +11,14 @@ export default function Image() {
         flexDirection: 'column',
         justifyContent: 'center',
         padding: 90,
-        background: '#fffaf8',
-        color: '#a32635',
+        background: '#fafaf9',
+        color: '#d21319',
         fontFamily: 'sans-serif',
       }}
     >
       <div style={{ fontSize: 42, fontWeight: 700 }}>BloodSync</div>
-      <div style={{ fontSize: 76, fontWeight: 800, color: '#222', marginTop: 20 }}>
-        Make every connection count.
+      <div style={{ fontSize: 76, fontWeight: 800, color: '#1b1e4a', marginTop: 20 }}>
+        A clear path from need to response.
       </div>
       <div style={{ fontSize: 30, marginTop: 30 }}>Private blood donation coordination</div>
     </div>,

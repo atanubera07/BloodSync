@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { bloodGroupSchema } from './mvp';
 export * from './eligibility';
 export * from './privacy';
 export const passwordSchema = z.string().min(12).max(128);
@@ -9,6 +10,16 @@ export const registerSchema = z.strictObject({
     .transform((v) => v.toLowerCase()),
   password: passwordSchema,
   fullName: z.string().trim().min(2).max(100),
+  phoneNumber: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9][0-9\s().-]{6,23}$/)
+    .optional(),
+  declaredBloodGroup: bloodGroupSchema.optional(),
+  postalAddress: z.string().trim().max(250).optional(),
+  city: z.string().trim().max(100).optional(),
+  stateRegion: z.string().trim().max(100).optional(),
+  acceptTerms: z.literal(true),
 });
 export const loginSchema = z.strictObject({ email: z.email(), password: z.string() });
 export const emailInputSchema = z.strictObject({ email: z.email().max(254).toLowerCase() });
@@ -18,6 +29,15 @@ export const resetPasswordSchema = z.strictObject({
   password: passwordSchema,
 });
 export const deleteAccountSchema = z.strictObject({ password: z.string().min(1) });
+export const accountDetailsSchema = z
+  .strictObject({
+    phoneNumber: registerSchema.shape.phoneNumber.unwrap().nullable().optional(),
+    declaredBloodGroup: bloodGroupSchema.nullable().optional(),
+    postalAddress: z.string().trim().max(250).nullable().optional(),
+    city: z.string().trim().max(100).nullable().optional(),
+    stateRegion: z.string().trim().max(100).nullable().optional(),
+  })
+  .refine((details) => Object.keys(details).length > 0, 'No account changes provided');
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export * from './mvp';

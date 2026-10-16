@@ -3,6 +3,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     exclude: ['**/dist/**', '**/node_modules/**'],
+    maxWorkers: 1,
+    testTimeout: 60_000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AccountGate } from '../../../components/AccountGate';
+import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
+import { StatusBadge } from '../../../components/StatusBadge';
 import { RequestForm, type BloodRequest } from '../../../components/RequestForm';
 import { apiJson } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
@@ -83,8 +85,12 @@ function Detail({ id }: { id: string }) {
               <h1>{request.hospitalName}</h1>
               <p>
                 {request.bloodGroup} · {request.units} unit{request.units === 1 ? '' : 's'} ·{' '}
-                {request.city} · {request.status.toLowerCase()}
+                {request.city}
               </p>
+              <div className="request-statuses">
+                <StatusBadge kind="request" value={request.status} />
+                <StatusBadge kind="urgency" value={request.urgency} />
+              </div>
             </div>
             {request.status === 'OPEN' && (
               <div className="actions">
@@ -185,5 +191,13 @@ function Detail({ id }: { id: string }) {
 }
 export default function RequestDetailPage() {
   const params = useParams<{ id: string }>();
-  return <AccountGate role="USER">{() => <Detail id={params.id} />}</AccountGate>;
+  return (
+    <AccountGate role="USER">
+      {() => (
+        <WorkspaceFrame role="USER" active="/requests">
+          <Detail id={params.id} />
+        </WorkspaceFrame>
+      )}
+    </AccountGate>
+  );
 }

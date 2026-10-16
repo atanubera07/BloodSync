@@ -1,12 +1,21 @@
-import { Body, Controller, Delete, Get, HttpCode, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, Patch, Post, Req } from '@nestjs/common';
 import type { AuthRequest } from './actor';
 import { MeService } from './me.service';
-import { consentSchema, deleteAccountSchema } from '@bloodsync/shared';
+import { accountDetailsSchema, consentSchema, deleteAccountSchema } from '@bloodsync/shared';
 import type { z } from 'zod';
 import { ZodBodyPipe } from './zod-body.pipe';
 @Controller('me')
 export class MeController {
   constructor(private readonly me: MeService) {}
+  @Get('details') @Header('Cache-Control', 'no-store') details(@Req() req: AuthRequest) {
+    return this.me.details(req.user);
+  }
+  @Patch('details') updateDetails(
+    @Req() req: AuthRequest,
+    @Body(new ZodBodyPipe(accountDetailsSchema)) body: z.infer<typeof accountDetailsSchema>,
+  ) {
+    return this.me.updateDetails(req.user, body);
+  }
   @Get('consent') consent(@Req() req: AuthRequest) {
     return this.me.consent(req.user);
   }
