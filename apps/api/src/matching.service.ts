@@ -64,7 +64,7 @@ export class MatchingService {
       AND d."birthDate" > CURRENT_DATE - ((${DONOR_ELIGIBILITY.maximumAgeYears} + 1)::int * INTERVAL '1 year')
       AND d."weightKg" >= ${DONOR_ELIGIBILITY.minimumWeightKg}
       AND (d."lastDonationAt" IS NULL OR d."lastDonationAt" <= CURRENT_DATE - (${DONOR_ELIGIBILITY.minimumDaysSinceDonation}::int * INTERVAL '1 day'))
-      AND d."bloodGroup" IN (${Prisma.join(groups)}) AND ${near}
+      AND d."bloodGroup" IN (${Prisma.join(groups)}) AND d."userId" <> ${request.ownerId}::uuid AND ${near}
       ORDER BY "distanceKm" ASC NULLS LAST, d."createdAt" ASC LIMIT 100`);
     return rows
       .filter(
