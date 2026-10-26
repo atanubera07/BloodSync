@@ -98,7 +98,15 @@ jobs:
           set -euo pipefail
           WEB_ORIGIN=http://localhost:3003 node apps/api/dist/apps/api/src/main.js > "$RUNNER_TEMP/api-browser.log" 2>&1 & api_pid=$!
           NODE_ENV=development API_ORIGIN=http://localhost:4000 pnpm --filter @bloodsync/web exec next dev -p 3003 > "$RUNNER_TEMP/web-browser.log" 2>&1 & web_pid=$!
-          trap 'kill "$api_pid" "$web_pid" 2>/dev/null || true' EXIT
+          cleanup() {
+            browser_exit=$?
+            if [ "$browser_exit" -ne 0 ]; then
+              tail -n 80 -v "$RUNNER_TEMP/api-browser.log" "$RUNNER_TEMP/web-browser.log" | sed -E 's/(token=)[A-Za-z0-9_-]+/\1[REDACTED]/g; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/[REDACTED_EMAIL]/g' || true
+            fi
+            kill "$api_pid" "$web_pid" 2>/dev/null || true
+            exit "$browser_exit"
+          }
+          trap cleanup EXIT
           for attempt in {1..60}; do curl -fsS http://localhost:4000/health/ready >/dev/null && break; sleep 1; done
           curl -fsS http://localhost:4000/health/ready >/dev/null
           for attempt in {1..60}; do curl -fsS http://localhost:3003/ >/dev/null && break; sleep 1; done

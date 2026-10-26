@@ -8,6 +8,19 @@ All notable changes to BloodSync are documented here. Versions follow Keep a Cha
 
 - Testing Library form and error-state tests, axe accessibility checks, and an API coverage report with CI thresholds.
 
+### Fixed
+
+- Donor consent controls and dashboard guidance stay consistent after withdrawal; profile edits, consent changes, and interest creation are serialized.
+- Password resets invalidate outstanding reset links, and unverified users receive actionable sign-in guidance.
+- Authentication limits apply across rotating email addresses; security audit events work with the deployed API prefix.
+- Request owners no longer appear in their own donor matches. Request closure, deletion, and connection failures have accurate feedback.
+- Browser checks use precise control selectors and application readiness checks. See the [2026-10-26 product review](docs/PRODUCT_REVIEW_2026-10-26.md) for verification evidence.
+
+### Security
+
+- Patched reported vulnerabilities in Next.js, Zod, Nodemailer, Vitest, request parsers, and HTTP dependencies within their existing major versions.
+- Enforced the 64 KB JSON limit, prevented API response caching, and made malformed CSRF comparisons return a denial safely.
+
 ## [0.3.0] - 2026-10-08
 
 ### Added

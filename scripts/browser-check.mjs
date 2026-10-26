@@ -6,6 +6,16 @@ const browser = await chromium.launch({
   args: ['--no-sandbox'],
 });
 const base = process.env.WEB_CHECK_URL || 'http://localhost:3000';
+async function openPage(page, path) {
+  const response = await page.goto(`${base}${path}`, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60_000,
+  });
+  if (response?.status() !== 200) throw new Error(`${path} returned ${response?.status()}`);
+  await page.locator('#main-content h1').first().waitFor();
+  await page.locator('.nav-signin').waitFor({ state: 'attached' });
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+}
 try {
   for (const path of [
     '/',
@@ -21,7 +31,7 @@ try {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
+      await openPage(page, path);
       const dimensions = await page.evaluate(() => ({
         scroll: document.documentElement.scrollWidth,
         client: document.documentElement.clientWidth,
@@ -42,7 +52,7 @@ try {
     console.log(`PASS: ${path} at 320px and 1440px`);
   }
   const zoomed = await browser.newPage({ viewport: { width: 640, height: 900 } });
-  await zoomed.goto(`${base}/`);
+  await openPage(zoomed, '/');
   await zoomed.evaluate(() => {
     document.documentElement.style.zoom = '200%';
   });
