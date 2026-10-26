@@ -40,3 +40,35 @@ describe('CSRF token after refresh', () => {
     expect(new Headers(retry.headers).get('x-csrf-token')).toBe('b'.repeat(43));
   });
 });
+
+describe('mutation feedback', () => {
+  it('reports a connection failure when the retry after refresh fails', async () => {
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockRejectedValueOnce(new TypeError('Network unavailable'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(api('/requests', { method: 'POST' })).rejects.toThrow('Network unavailable');
+    expect(dispatchEvent).toHaveBeenCalledOnce();
+    expect(dispatchEvent.mock.calls[0][0].detail).toEqual({
+      message: 'Unable to connect. Please try again.',
+      type: 'error',
+    });
+  });
+
+  it.each([
+    ['/requests/synthetic-id', 'Request closed.'],
+    ['/me', 'Your account was deleted.'],
+  ])('describes the completed deletion for %s', async (path, message) => {
+    const dispatchEvent = vi.fn();
+    vi.stubGlobal('window', { dispatchEvent });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+
+    await api(path, { method: 'DELETE' });
+    expect(dispatchEvent.mock.calls[0][0].detail).toEqual({ message, type: 'success' });
+  });
+});

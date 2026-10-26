@@ -43,6 +43,24 @@ describe('forms', () => {
     expect(screen.getByRole('button', { name: 'Sign in' })).not.toBeDisabled();
   });
 
+  it('guides an unverified account to verification without treating its password as wrong', async () => {
+    vi.mocked(api).mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Verify your email before signing in' }), {
+        status: 401,
+      }),
+    );
+    render(<SignIn />);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'tester@example.test' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'example-password' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Verify your email before signing in.');
+    expect(screen.getByRole('link', { name: 'Send a verification link' })).toHaveAttribute(
+      'href',
+      '/verify-email',
+    );
+  });
+
   it('keeps entered request values visible when saving fails', async () => {
     vi.mocked(apiJson).mockRejectedValue(new Error('Service temporarily unavailable'));
     const { container } = render(<RequestForm onSaved={vi.fn()} />);

@@ -156,14 +156,20 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired link');
     const passwordHash = await hashPassword(password as string);
     await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${record.userId}::uuid FOR UPDATE`;
+      const now = new Date();
       const claimed = await tx.emailToken.updateMany({
-        where: { id: record.id, usedAt: null },
-        data: { usedAt: new Date() },
+        where: { id: record.id, usedAt: null, expiresAt: { gt: now } },
+        data: { usedAt: now },
       });
       if (claimed.count !== 1) throw new BadRequestException('Invalid or expired link');
       await tx.user.update({
         where: { id: record.userId },
         data: { passwordHash, failedLoginAttempts: 0, lockedUntil: null },
+      });
+      await tx.emailToken.updateMany({
+        where: { userId: record.userId, kind: 'RESET', usedAt: null },
+        data: { usedAt: now },
       });
       await tx.session.updateMany({
         where: { userId: record.userId, revokedAt: null },

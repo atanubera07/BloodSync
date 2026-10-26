@@ -74,14 +74,30 @@ describe('account and dashboard workflow', () => {
     vi.mocked(api).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ status: 'APPROVED' }),
+      json: async () => ({ status: 'APPROVED', consentToMatch: true }),
     } as Response);
     vi.mocked(apiJson).mockResolvedValue([] as never);
     render(<Dashboard />);
-    expect(await screen.findByText('Approved for matching')).toBeInTheDocument();
+    expect(await screen.findByText('Profile approved')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /View matching requests/ })).toHaveAttribute(
       'href',
       '/donor/matches',
     );
+  });
+  it('guides an approved donor with withdrawn matching consent back to consent choices', async () => {
+    vi.mocked(api).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'APPROVED', consentToMatch: false }),
+    } as Response);
+    vi.mocked(apiJson).mockResolvedValue([] as never);
+    render(<Dashboard />);
+
+    expect(await screen.findByText('Matching is paused')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Review donor consent/ })).toHaveAttribute(
+      'href',
+      '/donor/profile',
+    );
+    expect(screen.queryByText('Profile approved')).not.toBeInTheDocument();
   });
 });

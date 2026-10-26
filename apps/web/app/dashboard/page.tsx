@@ -7,7 +7,10 @@ import { WorkspaceFrame } from '../../components/WorkspaceFrame';
 import { api, apiJson } from '../../lib/api';
 import { useResource } from '../../lib/use-resource';
 
-type DonorStatus = { status: 'PENDING' | 'APPROVED' | 'REJECTED' } | null;
+type DonorStatus = {
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  consentToMatch: boolean;
+} | null;
 type RequestSummary = { id: string; status: string };
 const loadOverview = async () => {
   const [profileResponse, requests] = await Promise.all([
@@ -27,10 +30,17 @@ function UserProgress() {
   );
   const donorStatus = data?.profile?.status;
   const nextStep =
-    donorStatus === 'APPROVED'
+    donorStatus === 'APPROVED' && !data?.profile?.consentToMatch
       ? {
-          title: 'Approved for matching',
-          body: 'Review requests that match your donor profile.',
+          title: 'Matching is paused',
+          body: 'Your profile is approved. Review your consent choices before matching resumes.',
+          href: '/donor/profile',
+          action: 'Review donor consent',
+        }
+      : donorStatus === 'APPROVED'
+        ? {
+          title: 'Profile approved',
+          body: 'Review matching requests while your consent is active.',
           href: '/donor/matches',
           action: 'View matching requests',
         }

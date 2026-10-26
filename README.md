@@ -4,7 +4,7 @@ Open-source blood donation coordination software by **Atanu Bera**. The referenc
 
 **Status:** A synthetic-data prototype is [deployed on Vercel](https://bloodsync-ivory.vercel.app). **Do not enter real patient or donor data.** Clinical, legal, independent security, backup and recovery reviews remain open. See the [latest security check](docs/FRONTEND_SECURITY_AUDIT_2026-10-09.md) and [phase audits](docs/PHASE6_AUDIT.md).
 
-The [product refinement check](docs/PRODUCT_REFINEMENT_2026-10-11.md) records the latest workflow improvements and open product gaps.
+The [current product review](docs/PRODUCT_REVIEW_2026-10-26.md) records the release evidence, fixes awaiting verification, and open product gaps. The [earlier refinement check](docs/PRODUCT_REFINEMENT_2026-10-11.md) records the account and dashboard workflow changes.
 
 ![BloodSync redesigned home page on desktop](docs/redesign/screenshots/after-home-1440.jpg)
 
@@ -42,7 +42,7 @@ Requirements: Node 24, pnpm 11, Docker Compose.
 2. Run `docker compose up -d`.
 3. Run `pnpm install && pnpm db:generate && pnpm db:migrate`.
 4. Run `pnpm dev`; the root command loads `.env` for both apps.
-5. Open `http://localhost:3000`. Verification and reset messages appear in Mailpit at `http://localhost:8025`. API liveness and readiness are at `/health/live` and `/health/ready`; the API is versioned under `/v1`, with OpenAPI documentation at `/v1/docs`.
+5. Open `http://localhost:3000`. Verification and reset messages appear in Mailpit at `http://localhost:8025`. API liveness and readiness are at `/health/live` and `/health/ready`; the API is versioned under `/v1`, with OpenAPI documentation at `/v1/docs`. On Vercel, use `/api/v1/health/live` and `/api/v1/health/ready`.
 
 The Compose database credentials are for local development only. The web app proxies `/api` to `API_ORIGIN` so the browser and API cookies share one host. A non-Vercel production build requires explicit HTTPS `API_ORIGIN` and `SITE_URL`; the API requires a non-local `SMTP_HOST` and `MAIL_FROM`. The Vercel configuration uses two Services, Vercel Queues for account email, and a daily Cron for request expiry; see [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md). Set `TRUST_PROXY_HOPS` to the exact number of trusted reverse proxies between the client and API: use `1` only for a topology with one proxy, such as a dedicated Next.js proxy, and `0` for direct connections. Block direct public access to the API when trusting forwarded IP headers. The API warns at startup if production uses `0`; this is a prompt to verify the topology, not a reason to guess a hop count.
 

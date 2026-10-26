@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest `main` branch and the latest tagged release receive security fixes. Earlier versions are unsupported. This prototype has not passed independent security or clinical review and must not process real patient or donor data.
+Security fixes target the latest production commit from `feat/vercel-adaptation`, the latest `main` branch, and the latest tagged release. Earlier commits are unsupported. This prototype has not passed independent security or clinical review and must not process real patient or donor data.
 
 ## Private reporting
 

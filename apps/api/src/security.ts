@@ -20,5 +20,7 @@ export function isAllowedMutation(
     cookie.length !== header.length
   )
     return false;
-  return timingSafeEqual(Buffer.from(cookie), Buffer.from(header));
+  const cookieBytes = Buffer.from(cookie);
+  const headerBytes = Buffer.from(header);
+  return cookieBytes.length === headerBytes.length && timingSafeEqual(cookieBytes, headerBytes);
 }

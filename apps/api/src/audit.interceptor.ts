@@ -20,7 +20,10 @@ function eventFor(
   if (path === '/me/export') return 'DATA_EXPORT';
   if (path === '/me/details' && method === 'PATCH') return 'ACCOUNT_DETAILS_UPDATED';
   if (path === '/me' && method === 'DELETE') return 'ACCOUNT_DELETION';
-  if (path === '/me/consent') return method === 'DELETE' ? 'CONSENT_WITHDRAWN' : 'CONSENT_GRANTED';
+  if (path === '/me/consent') {
+    if (method === 'POST') return 'CONSENT_GRANTED';
+    if (method === 'DELETE') return 'CONSENT_WITHDRAWN';
+  }
   return null;
 }
 @Injectable()
@@ -31,7 +34,7 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request & { user?: { id: string } }>();
-    const path = req.path.replace(/^\/v1(?=\/)/, '');
+    const path = req.path.replace(/^(?:\/api)?\/v1(?=\/)/, '');
     const method = req.method;
     const record = async (result: 'SUCCESS' | 'FAILURE', httpStatus?: number) => {
       const action = eventFor(method, path, result, httpStatus);

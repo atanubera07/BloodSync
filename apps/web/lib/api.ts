@@ -16,10 +16,17 @@ function mutationMessage(path: string, method: string) {
   if (path.includes('/approve')) return 'Donor approved.';
   if (path.includes('/reject')) return 'Donor rejected.';
   if (path.includes('/interests/')) return 'Your interest has been shared.';
-  if (path.includes('/consent')) return 'Your consent choices were updated.';
+  if (path === '/me' && method === 'DELETE') return 'Your account was deleted.';
+  if (path === '/me/details') return 'Account details updated.';
+  if (path.includes('/consent'))
+    return method === 'DELETE' ? 'Donor consent withdrawn.' : 'Your consent choices were updated.';
   if (path.includes('/donors/me')) return 'Your donor profile was saved.';
   if (path.includes('/requests'))
-    return method === 'POST' ? 'Blood request created.' : 'Request updated.';
+    return method === 'POST'
+      ? 'Blood request created.'
+      : method === 'DELETE'
+        ? 'Request closed.'
+        : 'Request updated.';
   return 'Your changes were saved.';
 }
 function csrfToken() {
@@ -59,12 +66,12 @@ export async function api(path: string, init: RequestInit = {}) {
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, options());
+    if (response.status === 401 && (path === '/auth/me' || !path.startsWith('/auth/'))) {
+      if (await refreshSession()) response = await fetch(`${API_URL}${path}`, options());
+    }
   } catch (error) {
     if (path !== '/auth/me') toast('Unable to connect. Please try again.', 'error');
     throw error;
-  }
-  if (response.status === 401 && (path === '/auth/me' || !path.startsWith('/auth/'))) {
-    if (await refreshSession()) response = await fetch(`${API_URL}${path}`, options());
   }
   const method = (init.method || 'GET').toUpperCase();
   if (!['GET', 'HEAD'].includes(method)) {

@@ -100,7 +100,9 @@ jobs:
           NODE_ENV=development API_ORIGIN=http://localhost:4000 pnpm --filter @bloodsync/web exec next dev -p 3003 > "$RUNNER_TEMP/web-browser.log" 2>&1 & web_pid=$!
           trap 'kill "$api_pid" "$web_pid" 2>/dev/null || true' EXIT
           for attempt in {1..60}; do curl -fsS http://localhost:4000/health/ready >/dev/null && break; sleep 1; done
+          curl -fsS http://localhost:4000/health/ready >/dev/null
           for attempt in {1..60}; do curl -fsS http://localhost:3003/ >/dev/null && break; sleep 1; done
+          curl -fsS http://localhost:3003/ >/dev/null
           WEB_CHECK_URL=http://localhost:3003 node scripts/browser-check.mjs
           node scripts/browser-auth-check.mjs
 

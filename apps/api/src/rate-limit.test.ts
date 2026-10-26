@@ -89,4 +89,66 @@ describe('shared Redis limiter', () => {
     expect(status).toHaveBeenCalledWith(429);
     expect(identify).toHaveBeenCalledTimes(13);
   });
+  it.each([
+    ['/v1/auth/login', 'email', 20],
+    ['/api/v1/auth/password/reset', 'token', 5],
+  ])('keeps an aggregate IP limit on %s when identities change', async (path, field, limit) => {
+    const counts = new Map<string, number>();
+    const redis = {
+      eval: vi.fn(async (_script: string, _keys: number, key: string) => {
+        const count = (counts.get(key) || 0) + 1;
+        counts.set(key, count);
+        return [count, 60];
+      }),
+    } as unknown as Redis;
+    const limiter = rateLimit(redis);
+    const next = vi.fn();
+    const status = vi.fn().mockReturnThis();
+    const res = { status, json: vi.fn(), setHeader: vi.fn() } as unknown as Response;
+    for (let index = 0; index <= Number(limit); index++) {
+      await limiter(
+        {
+          method: 'POST',
+          path,
+          ip: '192.0.2.1',
+          socket: {},
+          body: { [field]: `synthetic-${index}@example.test` },
+        } as Request,
+        res,
+        next,
+      );
+    }
+    expect(next).toHaveBeenCalledTimes(Number(limit));
+    expect(status).toHaveBeenCalledWith(429);
+  });
+
+  it('limits a target email across IP addresses and casing changes', async () => {
+    const counts = new Map<string, number>();
+    const redis = {
+      eval: vi.fn(async (_script: string, _keys: number, key: string) => {
+        const count = (counts.get(key) || 0) + 1;
+        counts.set(key, count);
+        return [count, 60];
+      }),
+    } as unknown as Redis;
+    const limiter = rateLimit(redis);
+    const next = vi.fn();
+    const status = vi.fn().mockReturnThis();
+    const res = { status, json: vi.fn(), setHeader: vi.fn() } as unknown as Response;
+    for (let index = 0; index < 6; index++) {
+      await limiter(
+        {
+          method: 'POST',
+          path: '/v1/auth/password/forgot',
+          ip: `192.0.2.${index + 1}`,
+          socket: {},
+          body: { email: index % 2 ? 'SYNTHETIC@example.test' : 'synthetic@example.test' },
+        } as Request,
+        res,
+        next,
+      );
+    }
+    expect(next).toHaveBeenCalledTimes(5);
+    expect(status).toHaveBeenCalledWith(429);
+  });
 });

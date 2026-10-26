@@ -25,6 +25,7 @@ class Client {
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
+    expect(response.headers.get('cache-control')).toBe('no-store');
     for (const setCookie of response.headers.getSetCookie()) {
       const [name, value] = setCookie.split(';', 1)[0].split('=');
       if (value) this.cookies.set(name, value);

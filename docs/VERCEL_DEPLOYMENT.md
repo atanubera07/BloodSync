@@ -1,6 +1,6 @@
 # Vercel deployment for synthetic data
 
-The `bloodsync` Vercel project exists in the `atanus-projects` team. The repository has not been connected to it or deployed. Only synthetic accounts and requests are authorized. The application is a prototype and must not process real donor or patient information.
+The `bloodsync` Vercel project in the `atanus-projects` team serves [BloodSync](https://bloodsync-ivory.vercel.app). The deployed baseline reviewed on 2026-10-26 is commit `9f61a34` from `feat/vercel-adaptation` (deployment `dpl_235i6tShRVS8AYSK5swkXThgyeh4`). Only synthetic accounts and requests are authorized. The application is a prototype and must not process real donor or patient information.
 
 ## Project setup
 
@@ -31,6 +31,6 @@ The `web` Service receives an internal API URL through a Vercel service binding.
 
 ## Deploy and audit
 
-Deploy the main branch only after the provider resources and variables are in place. The production API build applies the committed Prisma migrations before compiling. If migration fails, correct the database connection/permissions and redeploy; do not mark the deployment ready. The same-origin public `/api/v1/*` path routes to the API Service. The email queue consumer is hidden from public routes, and its internal API call requires `INTERNAL_JOB_SECRET`.
+Deploy the reviewed commit from the release branch only after the provider resources and variables are in place. The current release branch is `feat/vercel-adaptation`. Require successful `lint-format`, `unit`, `build`, `integration`, `docker-build`, `security`, and `codeql` jobs for that same commit before release; Vercel `READY` does not establish that GitHub CI passed. The production API build applies the committed Prisma migrations before compiling. If migration fails, correct the database connection/permissions and redeploy; do not mark the deployment ready. The same-origin public `/api/v1/*` path routes to the API Service. The email queue consumer is hidden from public routes, and its internal API call requires `INTERNAL_JOB_SECRET`.
 
-After deployment, run a live audit using synthetic accounts: health/readiness, signup and verification email, sign-in and refresh, donor approval, patient request, matching, admin approval, CSRF and role denials, rate limiting, request expiry, canonical links and mobile layout. Verify the Cron invocation and a queue retry in Vercel logs. Record each result and any failures in a dated audit. A successful synthetic-data audit does not approve use with real health data.
+After deployment, check `/api/v1/health/live` and `/api/v1/health/ready`, then run a live audit using synthetic accounts: signup and verification email, sign-in and refresh, donor approval, patient request, matching, admin approval, CSRF and role denials, rate limiting, request expiry, canonical links and mobile layout. Verify the Cron invocation and a queue retry in Vercel logs. Record each result and any failures in a dated audit. A successful synthetic-data audit does not approve use with real health data.

@@ -60,6 +60,7 @@ export class MatchingService {
         SELECT 1 FROM "ConsentRecord" c WHERE c."userId" = d."userId"
         AND c."withdrawnAt" IS NULL AND c."privacyVersion" = ${PRIVACY_VERSION} AND c."healthProcessing" = true AND c."contactSharing" = true
       ) AND d."status" = 'APPROVED' AND d."consentToMatch" = true
+      AND d."userId" <> ${request.ownerId}::uuid
       AND d."birthDate" <= CURRENT_DATE - (${DONOR_ELIGIBILITY.minimumAgeYears}::int * INTERVAL '1 year')
       AND d."birthDate" > CURRENT_DATE - ((${DONOR_ELIGIBILITY.maximumAgeYears} + 1)::int * INTERVAL '1 year')
       AND d."weightKg" >= ${DONOR_ELIGIBILITY.minimumWeightKg}

@@ -87,3 +87,96 @@ describe('account lockout', () => {
     ).toHaveBeenCalledTimes(MAX_FAILED_LOGINS);
   });
 });
+
+type ResetRecord = {
+  id: string;
+  userId: string;
+  kind: 'RESET' | 'VERIFY';
+  tokenHash: string;
+  expiresAt: Date;
+  usedAt: Date | null;
+};
+
+function resetFixture() {
+  const userId = '550e8400-e29b-41d4-a716-446655440000';
+  const tokens = ['A'.repeat(43), 'B'.repeat(43), 'C'.repeat(43)];
+  const records: ResetRecord[] = tokens.map((token, index) => ({
+    id: `token-${index}`,
+    userId,
+    kind: index === 2 ? 'VERIFY' : 'RESET',
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + 60_000),
+    usedAt: null,
+  }));
+  const updateMany = vi.fn(async ({
+    where,
+    data,
+  }: {
+    where: {
+      id?: string;
+      userId?: string;
+      kind?: string;
+      usedAt: null;
+      expiresAt?: { gt: Date };
+    };
+    data: { usedAt: Date };
+  }) => {
+    let count = 0;
+    for (const record of records) {
+      if (where.id && record.id !== where.id) continue;
+      if (where.userId && record.userId !== where.userId) continue;
+      if (where.kind && record.kind !== where.kind) continue;
+      if (record.usedAt !== null) continue;
+      if (where.expiresAt && record.expiresAt <= where.expiresAt.gt) continue;
+      record.usedAt = data.usedAt;
+      count++;
+    }
+    return { count };
+  });
+  const tx = {
+    $queryRaw: vi.fn().mockResolvedValue([{ id: userId }]),
+    emailToken: { updateMany },
+    user: { update: vi.fn().mockResolvedValue({ id: userId }) },
+    session: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+  };
+  const db = {
+    emailToken: {
+      findUnique: vi.fn(async ({ where }: { where: { tokenHash: string } }) =>
+        records.find((record) => record.tokenHash === where.tokenHash) ?? null,
+      ),
+    },
+    $transaction: (run: (transaction: typeof tx) => Promise<unknown>) => run(tx),
+  } as unknown as PrismaService;
+  return { auth: new AuthService(db, {} as MailService), tx, records, tokens };
+}
+
+describe('password reset safety', () => {
+  it('invalidates older reset links and sessions after a successful reset', async () => {
+    const { auth, tx, records, tokens } = resetFixture();
+    await auth.resetPassword({ token: tokens[1], password: 'replacement-long-password' });
+    expect(records[0].usedAt).toBeInstanceOf(Date);
+    expect(records[1].usedAt).toBeInstanceOf(Date);
+    expect(records[2].usedAt).toBeNull();
+    expect(tx.session.updateMany).toHaveBeenCalledWith({
+      where: { userId: records[0].userId, revokedAt: null },
+      data: { revokedAt: expect.any(Date) },
+    });
+    await expect(
+      auth.resetPassword({ token: tokens[0], password: 'another-long-password' }),
+    ).rejects.toThrow('Invalid or expired link');
+    expect(tx.user.update).toHaveBeenCalledTimes(1);
+  }, 15_000);
+
+  it('rejects a reset link that expires while waiting to claim it', async () => {
+    const { auth, tx, records, tokens } = resetFixture();
+    tx.$queryRaw.mockImplementationOnce(async () => {
+      records[1].expiresAt = new Date(0);
+      return [{ id: records[1].userId }];
+    });
+    await expect(
+      auth.resetPassword({ token: tokens[1], password: 'replacement-long-password' }),
+    ).rejects.toThrow('Invalid or expired link');
+    expect(tx.user.update).not.toHaveBeenCalled();
+    expect(tx.session.updateMany).not.toHaveBeenCalled();
+  }, 15_000);
+});

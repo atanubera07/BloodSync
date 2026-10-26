@@ -1,5 +1,7 @@
 # BloodSync UI/UX redesign review
 
+This is the historical review of the 2026-10-14 redesign. The redesign was subsequently released to the synthetic-data production site. Statements below about no deployment describe the original review session. See the [current product review](../PRODUCT_REVIEW_2026-10-26.md) for release status.
+
 Branch: `codex/ui-ux-redesign-2026-10-14` (based on `feat/vercel-adaptation`). Production deployment and production branch were not changed.
 
 ## Audit and strategy

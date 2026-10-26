@@ -37,7 +37,8 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(express.json({ limit: '64kb' }));
   app.enableCors({ origin: config.WEB_ORIGIN, credentials: true });
-  app.use((req: Request, _res: Response, next: NextFunction) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store');
     if (!isAllowedMutation(req, config.WEB_ORIGIN))
       return next(new BadRequestException('Invalid request origin'));
     next();

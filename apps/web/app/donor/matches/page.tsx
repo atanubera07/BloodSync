@@ -4,7 +4,7 @@ import { AccountGate } from '../../../components/AccountGate';
 import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { EmptyState } from '../../../components/EmptyState';
-import { apiJson } from '../../../lib/api';
+import { apiJson, ApiError } from '../../../lib/api';
 import { useResource } from '../../../lib/use-resource';
 type Match = {
   id: string;
@@ -17,13 +17,24 @@ type Match = {
   distanceKm: number | null;
   responded: boolean;
 };
-const loadMatches = () => apiJson<Match[]>('/donors/me/matches');
+type MatchResult = { items: Match[]; blocked?: 'missing-profile' | 'review-consent' };
+const loadMatches = async (): Promise<MatchResult> => {
+  try {
+    return { items: await apiJson<Match[]>('/donors/me/matches') };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404)
+      return { items: [], blocked: 'missing-profile' };
+    if (error instanceof ApiError && error.status === 403)
+      return { items: [], blocked: 'review-consent' };
+    throw error;
+  }
+};
 function Matches() {
   const { data, setData, loading, error, setError, reload } = useResource(
     loadMatches,
     'Could not load matching requests.',
   );
-  const items = data ?? [];
+  const items = data?.items ?? [];
   const [pending, setPending] = useState('');
   async function respond(id: string) {
     setPending(id);
@@ -31,7 +42,14 @@ function Matches() {
     try {
       await apiJson(`/donors/me/interests/${id}`, { method: 'POST' });
       setData((current) =>
-        (current ?? []).map((item) => (item.id === id ? { ...item, responded: true } : item)),
+        current
+          ? {
+              ...current,
+              items: current.items.map((item) =>
+                item.id === id ? { ...item, responded: true } : item,
+              ),
+            }
+          : current,
       );
     } catch (message) {
       setError(String(message instanceof Error ? message.message : message));
@@ -53,6 +71,19 @@ function Matches() {
           <p className="error">{error}</p>
           <button onClick={reload}>Retry</button>
         </div>
+      ) : data?.blocked ? (
+        <EmptyState
+          eyebrow="Before matching starts"
+          title={
+            data.blocked === 'missing-profile'
+              ? 'Start with your donor profile.'
+              : 'Review your approval and consent.'
+          }
+          action={{ href: '/donor/profile', label: 'Open donor profile' }}
+        >
+          Matching needs an approved donor profile, your matching choice, and current consent to
+          process screening details and share contact information.
+        </EmptyState>
       ) : items.length === 0 ? (
         <EmptyState
           eyebrow="No matches right now"

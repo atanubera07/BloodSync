@@ -35,13 +35,17 @@ export function rateLimit(
     const identity =
       typeof req.body?.email === 'string' &&
       ['login', 'reset', 'verification'].includes(policy.name)
-        ? `${address}:${req.body.email.trim().toLowerCase()}`
+        ? `email:${req.body.email.trim().toLowerCase()}`
         : typeof req.body?.token === 'string' && ['reset', 'verification'].includes(policy.name)
-          ? `${address}:${req.body.token}`
-          : address;
+          ? `token:${req.body.token}`
+          : undefined;
     try {
       const userId = await authenticatedUserId?.(req);
-      const subjects = [identity, ...(userId ? [`user:${userId}`] : [])];
+      const subjects = [
+        `ip:${address}`,
+        ...(identity ? [identity] : []),
+        ...(userId ? [`user:${userId}`] : []),
+      ];
       for (const subject of subjects) {
         const digest = createHash('sha256').update(subject).digest('hex');
         const result = (await redis.eval(

@@ -9,10 +9,12 @@ import { safeAuthDestination } from '../../lib/auth-redirect';
 export default function SignIn() {
   const router = useRouter();
   const [error, setError] = useState('');
+  const [verificationRequired, setVerificationRequired] = useState(false);
   const [pending, setPending] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+    setVerificationRequired(false);
     setPending(true);
     const data = new FormData(event.currentTarget);
     try {
@@ -22,12 +24,18 @@ export default function SignIn() {
         credentials: 'include',
         body: JSON.stringify({ email: data.get('email'), password: data.get('password') }),
       });
-      if (!response.ok)
+      if (!response.ok) {
+        const body = response.status === 401 ? await response.json().catch(() => ({})) : {};
+        const needsVerification = body?.message === 'Verify your email before signing in';
+        setVerificationRequired(needsVerification);
         throw new Error(
-          response.status === 429
-            ? 'Too many attempts. Please wait 15 minutes and try again.'
-            : 'Invalid email or password',
+          needsVerification
+            ? 'Verify your email before signing in.'
+            : response.status === 429
+              ? 'Too many attempts. Please wait 15 minutes and try again.'
+              : 'Invalid email or password',
         );
+      }
       const next = new URLSearchParams(window.location.search).get('next');
       router.push(safeAuthDestination(next));
     } catch (message) {
@@ -52,7 +60,12 @@ export default function SignIn() {
             Forgot your password?
           </Link>
           <button disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
-          {error && <p role="alert">{error}</p>}
+          {error && (
+            <p role="alert">
+              {error}{' '}
+              {verificationRequired && <Link href="/verify-email">Send a verification link</Link>}
+            </p>
+          )}
         </form>
         <p>
           New here? <Link href="/sign-up">Create an account</Link>

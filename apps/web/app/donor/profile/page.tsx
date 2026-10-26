@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { AccountGate } from '../../../components/AccountGate';
 import { WorkspaceFrame } from '../../../components/WorkspaceFrame';
 import { StatusBadge } from '../../../components/StatusBadge';
@@ -36,10 +36,18 @@ function ProfileForm() {
     reload,
   } = useResource(loadProfile, 'Unable to load your donor profile.');
   const [saving, setSaving] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [consentToMatch, setConsentToMatch] = useState(false);
+  const [healthProcessing, setHealthProcessing] = useState(false);
+  const [contactSharing, setContactSharing] = useState(false);
+  useEffect(() => {
+    setConsentToMatch(profile?.consentToMatch ?? false);
+  }, [profile?.consentToMatch]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving || withdrawing) return;
     setError('');
     setSuccess('');
     setSaving(true);
@@ -68,6 +76,24 @@ function ProfileForm() {
       setError(String(message instanceof Error ? message.message : message));
     } finally {
       setSaving(false);
+    }
+  }
+  async function withdraw() {
+    if (saving || withdrawing) return;
+    setWithdrawing(true);
+    setError('');
+    setSuccess('');
+    try {
+      await apiJson('/me/consent', { method: 'DELETE' });
+      setConsentToMatch(false);
+      setHealthProcessing(false);
+      setContactSharing(false);
+      setProfile((current) => (current ? { ...current, consentToMatch: false } : current));
+      setSuccess('Consent withdrawn. Matching and contact sharing stopped.');
+    } catch {
+      setError('Unable to withdraw consent. Try again.');
+    } finally {
+      setWithdrawing(false);
     }
   }
   return (
@@ -161,19 +187,32 @@ function ProfileForm() {
             <fieldset className="form-section">
               <legend>Your choices and consent</legend>
               <label className="check">
-                <input name="healthProcessing" type="checkbox" required />I consent to processing my
+                <input
+                  name="healthProcessing"
+                  type="checkbox"
+                  checked={healthProcessing}
+                  onChange={(event) => setHealthProcessing(event.target.checked)}
+                  required
+                />I consent to processing my
                 screening details under the <Link href="/privacy">privacy policy</Link> (version
                 {PRIVACY_VERSION}).
               </label>
               <label className="check">
-                <input name="contactSharing" type="checkbox" required />I consent to sharing my
+                <input
+                  name="contactSharing"
+                  type="checkbox"
+                  checked={contactSharing}
+                  onChange={(event) => setContactSharing(event.target.checked)}
+                  required
+                />I consent to sharing my
                 account name and email with a request owner if I express interest.
               </label>
               <label className="check">
                 <input
                   name="consentToMatch"
                   type="checkbox"
-                  defaultChecked={profile?.consentToMatch || false}
+                  checked={consentToMatch}
+                  onChange={(event) => setConsentToMatch(event.target.checked)}
                 />{' '}
                 I agree to appear in anonymized donor matches.
               </label>
@@ -182,24 +221,17 @@ function ProfileForm() {
               Screening defaults: age 18–65, weight at least 45 kg, and 90 days since the last
               donation. These are subject to local clinical review.
             </p>
-            <button disabled={saving}>{saving ? 'Saving…' : 'Save for review'}</button>
+            <button disabled={saving || withdrawing}>
+              {saving ? 'Saving…' : 'Save for review'}
+            </button>
           </form>
           <button
             className="secondary"
             type="button"
-            onClick={async () => {
-              try {
-                await apiJson('/me/consent', { method: 'DELETE' });
-                setSuccess('Consent withdrawn. Matching and contact sharing stopped.');
-                setProfile((current) =>
-                  current ? { ...current, consentToMatch: false } : current,
-                );
-              } catch {
-                setError('Unable to withdraw consent. Try again.');
-              }
-            }}
+            disabled={saving || withdrawing}
+            onClick={() => void withdraw()}
           >
-            Withdraw donor consent
+            {withdrawing ? 'Withdrawing…' : 'Withdraw donor consent'}
           </button>
           {error && (
             <p role="alert" className="error">
