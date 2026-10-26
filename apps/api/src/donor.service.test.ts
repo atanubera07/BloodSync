@@ -42,11 +42,15 @@ describe('DonorService ownership and approval', () => {
       ownerId: 'patient-id',
     };
     const upsert = vi.fn();
-    const db = {
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       donorProfile: { findUnique: vi.fn().mockResolvedValue(donor) },
       consentRecord: { findFirst: vi.fn().mockResolvedValue({}) },
       bloodRequest: { findUnique: vi.fn().mockResolvedValue(request) },
       requestInterest: { upsert },
+    };
+    const db = {
+      $transaction: (run: (value: typeof tx) => Promise<unknown>) => run(tx),
     } as unknown as PrismaService;
     const service = new DonorService(db, {} as MatchingService);
     await expect(

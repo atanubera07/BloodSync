@@ -41,8 +41,12 @@ describe('privacy controls', () => {
     expect(update).toHaveBeenCalledTimes(2);
   });
   it('blocks donor profile creation before active consent', async () => {
-    const db = {
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       consentRecord: { findFirst: vi.fn().mockResolvedValue(null) },
+    };
+    const db = {
+      $transaction: (run: (value: typeof tx) => Promise<unknown>) => run(tx),
     } as unknown as PrismaService;
     await expect(
       new DonorService(db, {} as MatchingService).saveOwn(
@@ -57,6 +61,7 @@ describe('privacy controls', () => {
     const donorUpdate = vi.fn();
     const deleteMany = vi.fn();
     const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       consentRecord: { updateMany, create },
       donorProfile: { updateMany: donorUpdate },
       requestInterest: { deleteMany },
@@ -106,7 +111,12 @@ describe('privacy controls', () => {
     const hash = await hashPassword('correct-password');
     const updateMany = vi.fn();
     const remove = vi.fn();
-    const tx = { auditEvent: { updateMany }, user: { delete: remove } };
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      donorProfile: { findUnique: vi.fn().mockResolvedValue({ id: 'donor-id' }) },
+      auditEvent: { updateMany },
+      user: { delete: remove },
+    };
     const db = {
       user: { findUnique: vi.fn().mockResolvedValue({ id: actor.id, passwordHash: hash }) },
       donorProfile: { findUnique: vi.fn().mockResolvedValue({ id: 'donor-id' }) },

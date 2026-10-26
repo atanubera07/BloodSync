@@ -27,21 +27,21 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "ioredis": "^6.0.0",
-    "nodemailer": "^10.0.15",
+    "nodemailer": "^10.1.4",
     "pino": "^9.9.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.1.0"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "@types/node": "^22.18.0",
     "@types/nodemailer": "^7.0.0",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "4.1.12",
     "prisma": "^6.16.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }

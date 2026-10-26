@@ -23,9 +23,12 @@ export class DonorService {
     private readonly db: PrismaService,
     private readonly matching: MatchingService,
   ) {}
-  private async hasContactConsent(userId: string) {
+  private async hasContactConsent(
+    userId: string,
+    db: Pick<PrismaService, 'consentRecord'> = this.db,
+  ) {
     return Boolean(
-      await this.db.consentRecord.findFirst({
+      await db.consentRecord.findFirst({
         where: {
           userId,
           withdrawnAt: null,
@@ -54,25 +57,33 @@ export class DonorService {
       explicit?.privacyVersion === PRIVACY_VERSION &&
       explicit.healthProcessing === true &&
       explicit.contactSharing === true;
-    const existing = await this.db.consentRecord.findFirst({
-      where: {
-        userId: actor.id,
-        withdrawnAt: null,
-        privacyVersion: PRIVACY_VERSION,
-        healthProcessing: true,
-      },
-      orderBy: { grantedAt: 'desc' },
-    });
-    if (!existing && !validExplicit) throw new ForbiddenException('Health data consent required');
-    const parsed = donorProfileSchema.safeParse(profileInput);
-    if (!parsed.success) throw new BadRequestException('Invalid donor profile');
-    const data = parsed.data;
-    const birthDate = new Date(data.birthDate);
-    const lastDonationAt = data.lastDonationAt ? new Date(data.lastDonationAt) : null;
-    const reasons = assessDonorEligibility({ birthDate, weightKg: data.weightKg, lastDonationAt });
-    if (reasons.length)
-      throw new UnprocessableEntityException({ message: 'Donor screening did not pass', reasons });
     return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${actor.id}::uuid FOR UPDATE`;
+      const existing = await tx.consentRecord.findFirst({
+        where: {
+          userId: actor.id,
+          withdrawnAt: null,
+          privacyVersion: PRIVACY_VERSION,
+          healthProcessing: true,
+        },
+        orderBy: { grantedAt: 'desc' },
+      });
+      if (!existing && !validExplicit) throw new ForbiddenException('Health data consent required');
+      const parsed = donorProfileSchema.safeParse(profileInput);
+      if (!parsed.success) throw new BadRequestException('Invalid donor profile');
+      const data = parsed.data;
+      const birthDate = new Date(data.birthDate);
+      const lastDonationAt = data.lastDonationAt ? new Date(data.lastDonationAt) : null;
+      const reasons = assessDonorEligibility({
+        birthDate,
+        weightKg: data.weightKg,
+        lastDonationAt,
+      });
+      if (reasons.length)
+        throw new UnprocessableEntityException({
+          message: 'Donor screening did not pass',
+          reasons,
+        });
       if (validExplicit) {
         await tx.consentRecord.updateMany({
           where: { userId: actor.id, withdrawnAt: null },
@@ -132,27 +143,34 @@ export class DonorService {
     return requests.map((request) => ({ ...request, responded: responded.has(request.id) }));
   }
   async expressInterest(actor: Actor, requestIdInput: string) {
+    requireUser(actor);
     const requestId = z.uuid().safeParse(requestIdInput);
     if (!requestId.success) throw new BadRequestException('Invalid request ID');
-    const donor = await this.getOwn(actor);
-    if (
-      donor.status !== 'APPROVED' ||
-      !donor.consentToMatch ||
-      !(await this.hasContactConsent(actor.id))
-    )
-      throw new ForbiddenException('Approved matching consent required');
-    const request = await this.db.bloodRequest.findUnique({ where: { id: requestId.data } });
-    if (!request || request.status !== 'OPEN' || request.expiresAt <= new Date())
-      throw new NotFoundException('Active request not found');
-    if (request.ownerId === actor.id)
-      throw new ForbiddenException('Cannot respond to your own request');
-    if (!(await this.matching.isRequestNearDonor(request, donor)))
-      throw new ForbiddenException('Request does not match your profile');
-    await this.db.requestInterest.upsert({
-      where: { requestId_donorId: { requestId: request.id, donorId: donor.id } },
-      create: { requestId: request.id, donorId: donor.id, userId: actor.id },
-      update: {},
+    return this.db.$transaction(async (tx) => {
+      // Match profile/consent writers first, then request writers, before creating an interest.
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${actor.id}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT "id" FROM "BloodRequest" WHERE "id" = ${requestId.data}::uuid FOR UPDATE`;
+      const donor = await tx.donorProfile.findUnique({ where: { userId: actor.id } });
+      if (!donor) throw new NotFoundException('Donor profile not found');
+      if (
+        donor.status !== 'APPROVED' ||
+        !donor.consentToMatch ||
+        !(await this.hasContactConsent(actor.id, tx))
+      )
+        throw new ForbiddenException('Approved matching consent required');
+      const request = await tx.bloodRequest.findUnique({ where: { id: requestId.data } });
+      if (!request || request.status !== 'OPEN' || request.expiresAt <= new Date())
+        throw new NotFoundException('Active request not found');
+      if (request.ownerId === actor.id)
+        throw new ForbiddenException('Cannot respond to your own request');
+      if (!(await this.matching.isRequestNearDonor(request, donor, tx)))
+        throw new ForbiddenException('Request does not match your profile');
+      await tx.requestInterest.upsert({
+        where: { requestId_donorId: { requestId: request.id, donorId: donor.id } },
+        create: { requestId: request.id, donorId: donor.id, userId: actor.id },
+        update: {},
+      });
+      return { ok: true };
     });
-    return { ok: true };
   }
 }

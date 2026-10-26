@@ -54,7 +54,9 @@ describe('forms', () => {
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'example-password' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Verify your email before signing in.');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Verify your email before signing in.',
+    );
     expect(screen.getByRole('link', { name: 'Send a verification link' })).toHaveAttribute(
       'href',
       '/verify-email',

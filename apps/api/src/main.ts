@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { installOpenApi } from './openapi';
 import type { Request, Response, NextFunction } from 'express';
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: true, logger: new ApiLogger() });
+  const app = await NestFactory.create(AppModule, { bodyParser: false, logger: new ApiLogger() });
   const config = app.get(ConfigService).values;
   app.setGlobalPrefix(config.VERCEL ? 'api/v1' : 'v1', {
     exclude: [
@@ -33,12 +33,15 @@ async function bootstrap() {
     new ApiLogger().warn('TRUST_PROXY_HOPS is 0 in production; verify the hosting proxy topology');
   if (config.TRUST_PROXY_HOPS)
     app.getHttpAdapter().getInstance().set('trust proxy', config.TRUST_PROXY_HOPS);
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   app.use(helmet());
   app.use(cookieParser());
   app.use(express.json({ limit: '64kb' }));
   app.enableCors({ origin: config.WEB_ORIGIN, credentials: true });
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    res.setHeader('Cache-Control', 'no-store');
+  app.use((req: Request, _res: Response, next: NextFunction) => {
     if (!isAllowedMutation(req, config.WEB_ORIGIN))
       return next(new BadRequestException('Invalid request origin'));
     next();

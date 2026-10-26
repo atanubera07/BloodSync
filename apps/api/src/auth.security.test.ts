@@ -5,6 +5,13 @@ import { AuthService, hashToken, MAX_FAILED_LOGINS } from './auth.service';
 import type { PrismaService } from './prisma.service';
 import type { MailService } from './mail.service';
 
+vi.mock('./password', () => ({
+  hashPassword: vi.fn(async (password: string) => `synthetic-hash:${password}`),
+  verifyPassword: vi.fn(
+    async (hash: string, password: string) => hash === `synthetic-hash:${password}`,
+  ),
+}));
+
 vi.stubEnv('DATABASE_URL', 'postgresql://example:example@localhost:5432/example');
 vi.stubEnv('WEB_ORIGIN', 'http://localhost:3000');
 vi.stubEnv('SESSION_SECRET', 'test-secret-longer-than-thirty-two-characters');
@@ -108,31 +115,33 @@ function resetFixture() {
     expiresAt: new Date(Date.now() + 60_000),
     usedAt: null,
   }));
-  const updateMany = vi.fn(async ({
-    where,
-    data,
-  }: {
-    where: {
-      id?: string;
-      userId?: string;
-      kind?: string;
-      usedAt: null;
-      expiresAt?: { gt: Date };
-    };
-    data: { usedAt: Date };
-  }) => {
-    let count = 0;
-    for (const record of records) {
-      if (where.id && record.id !== where.id) continue;
-      if (where.userId && record.userId !== where.userId) continue;
-      if (where.kind && record.kind !== where.kind) continue;
-      if (record.usedAt !== null) continue;
-      if (where.expiresAt && record.expiresAt <= where.expiresAt.gt) continue;
-      record.usedAt = data.usedAt;
-      count++;
-    }
-    return { count };
-  });
+  const updateMany = vi.fn(
+    async ({
+      where,
+      data,
+    }: {
+      where: {
+        id?: string;
+        userId?: string;
+        kind?: string;
+        usedAt: null;
+        expiresAt?: { gt: Date };
+      };
+      data: { usedAt: Date };
+    }) => {
+      let count = 0;
+      for (const record of records) {
+        if (where.id && record.id !== where.id) continue;
+        if (where.userId && record.userId !== where.userId) continue;
+        if (where.kind && record.kind !== where.kind) continue;
+        if (record.usedAt !== null) continue;
+        if (where.expiresAt && record.expiresAt <= where.expiresAt.gt) continue;
+        record.usedAt = data.usedAt;
+        count++;
+      }
+      return { count };
+    },
+  );
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([{ id: userId }]),
     emailToken: { updateMany },
@@ -141,8 +150,9 @@ function resetFixture() {
   };
   const db = {
     emailToken: {
-      findUnique: vi.fn(async ({ where }: { where: { tokenHash: string } }) =>
-        records.find((record) => record.tokenHash === where.tokenHash) ?? null,
+      findUnique: vi.fn(
+        async ({ where }: { where: { tokenHash: string } }) =>
+          records.find((record) => record.tokenHash === where.tokenHash) ?? null,
       ),
     },
     $transaction: (run: (transaction: typeof tx) => Promise<unknown>) => run(tx),

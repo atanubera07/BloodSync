@@ -61,6 +61,7 @@ export class MeService {
     )
       throw new BadRequestException('Review the current privacy policy and consent choices');
     return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${actor.id}::uuid FOR UPDATE`;
       await tx.consentRecord.updateMany({
         where: { userId: actor.id, withdrawnAt: null },
         data: { withdrawnAt: new Date() },
@@ -77,6 +78,7 @@ export class MeService {
   }
   async withdrawConsent(actor: Actor) {
     await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${actor.id}::uuid FOR UPDATE`;
       await tx.consentRecord.updateMany({
         where: { userId: actor.id, withdrawnAt: null },
         data: { withdrawnAt: new Date() },
@@ -138,11 +140,12 @@ export class MeService {
     const user = await this.db.user.findUnique({ where: { id: actor.id } });
     if (!user || !(await verifyPassword(user.passwordHash, password)))
       throw new ForbiddenException('Password confirmation failed');
-    const donor = await this.db.donorProfile.findUnique({
-      where: { userId: actor.id },
-      select: { id: true },
-    });
     await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${actor.id}::uuid FOR UPDATE`;
+      const donor = await tx.donorProfile.findUnique({
+        where: { userId: actor.id },
+        select: { id: true },
+      });
       await tx.auditEvent.updateMany({
         where: { actorId: actor.id },
         data: { actorId: null, targetId: null, ipHash: null },

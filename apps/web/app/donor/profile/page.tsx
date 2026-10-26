@@ -19,7 +19,7 @@ type Profile = {
   consentToMatch: boolean;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
 };
-import { bloodGroups, PRIVACY_VERSION } from '@bloodsync/shared';
+import { bloodGroups, DONOR_ELIGIBILITY, PRIVACY_VERSION } from '@bloodsync/shared';
 const groups = bloodGroups;
 const loadProfile = async () => {
   const response = await api('/donors/me');
@@ -114,7 +114,7 @@ function ProfileForm() {
       ) : (
         <>
           <div className="donor-status">
-            <span>Matching status</span>
+            <span>Profile review status</span>
             {profile ? (
               <StatusBadge kind="donor" value={profile.status} />
             ) : (
@@ -193,8 +193,9 @@ function ProfileForm() {
                   checked={healthProcessing}
                   onChange={(event) => setHealthProcessing(event.target.checked)}
                   required
-                />I consent to processing my
-                screening details under the <Link href="/privacy">privacy policy</Link> (version
+                />
+                I consent to processing my screening details under the{' '}
+                <Link href="/privacy">privacy policy</Link> (version
                 {PRIVACY_VERSION}).
               </label>
               <label className="check">
@@ -204,8 +205,9 @@ function ProfileForm() {
                   checked={contactSharing}
                   onChange={(event) => setContactSharing(event.target.checked)}
                   required
-                />I consent to sharing my
-                account name and email with a request owner if I express interest.
+                />
+                I consent to sharing my account name and email with a request owner if I express
+                interest.
               </label>
               <label className="check">
                 <input
@@ -218,8 +220,11 @@ function ProfileForm() {
               </label>
             </fieldset>
             <p className="hint">
-              Screening defaults: age 18–65, weight at least 45 kg, and 90 days since the last
-              donation. These are subject to local clinical review.
+              Screening defaults: age {DONOR_ELIGIBILITY.minimumAgeYears}–
+              {DONOR_ELIGIBILITY.maximumAgeYears}, weight at least{' '}
+              {DONOR_ELIGIBILITY.minimumWeightKg} kg, and{' '}
+              {DONOR_ELIGIBILITY.minimumDaysSinceDonation} days since the last donation. These are
+              subject to local clinical review.
             </p>
             <button disabled={saving || withdrawing}>
               {saving ? 'Saving…' : 'Save for review'}

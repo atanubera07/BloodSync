@@ -92,7 +92,11 @@ export class MatchingService {
     return rows;
   }
 
-  async isRequestNearDonor(request: BloodRequest, donor: DonorProfile) {
+  async isRequestNearDonor(
+    request: BloodRequest,
+    donor: DonorProfile,
+    db: Pick<PrismaService, '$queryRaw'> = this.db,
+  ) {
     if (request.status !== 'OPEN' || request.expiresAt <= new Date()) return false;
     if (
       !compatibleDonorGroups(request.bloodGroup as BloodGroup).includes(
@@ -115,7 +119,7 @@ export class MatchingService {
       donor.longitude == null
     )
       return request.city.trim().toLowerCase() === donor.city.trim().toLowerCase();
-    const rows = await this.db.$queryRaw<{ nearby: boolean }[]>(Prisma.sql`
+    const rows = await db.$queryRaw<{ nearby: boolean }[]>(Prisma.sql`
       SELECT ST_DWithin(
         ST_SetSRID(ST_MakePoint(${Number(request.longitude)}, ${Number(request.latitude)}), 4326)::geography,
         ST_SetSRID(ST_MakePoint(${Number(donor.longitude)}, ${Number(donor.latitude)}), 4326)::geography,

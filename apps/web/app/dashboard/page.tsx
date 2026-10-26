@@ -39,31 +39,31 @@ function UserProgress() {
         }
       : donorStatus === 'APPROVED'
         ? {
-          title: 'Profile approved',
-          body: 'Review matching requests while your consent is active.',
-          href: '/donor/matches',
-          action: 'View matching requests',
-        }
-      : donorStatus === 'PENDING'
-        ? {
-            title: 'Profile awaiting review',
-            body: 'An administrator will review your screening details before matching starts.',
-            href: '/donor/profile',
-            action: 'View donor profile',
+            title: 'Profile approved',
+            body: 'Review matching requests while your consent is active.',
+            href: '/donor/matches',
+            action: 'View matching requests',
           }
-        : donorStatus === 'REJECTED'
+        : donorStatus === 'PENDING'
           ? {
-              title: 'Profile needs an update',
-              body: 'Review your screening details before submitting again.',
+              title: 'Profile awaiting review',
+              body: 'An administrator will review your screening details before matching starts.',
               href: '/donor/profile',
-              action: 'Update donor profile',
+              action: 'View donor profile',
             }
-          : {
-              title: 'Become a potential donor',
-              body: 'Complete a donor profile to request an eligibility review.',
-              href: '/donor/profile',
-              action: 'Start donor profile',
-            };
+          : donorStatus === 'REJECTED'
+            ? {
+                title: 'Profile needs an update',
+                body: 'Review your screening details before submitting again.',
+                href: '/donor/profile',
+                action: 'Update donor profile',
+              }
+            : {
+                title: 'Become a potential donor',
+                body: 'Complete a donor profile to request an eligibility review.',
+                href: '/donor/profile',
+                action: 'Start donor profile',
+              };
   return (
     <section
       className={`dashboard-progress${loading ? ' is-loading' : ''}`}

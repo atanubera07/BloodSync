@@ -1,30 +1,48 @@
 # Product review: 2026-10-26
 
-Scope: the BloodSync synthetic-data MVP, including account journeys, donor review and consent, request matching, responsive UI, security controls, and release operations. This review does not approve real donor or patient data.
+Scope: the BloodSync synthetic-data MVP, including accounts, donor review and consent, requests and matching, responsive UI, security controls, dependencies, and release operations. Real donor or patient data remains outside the approved scope.
 
-## Baseline evidence
+## Baseline
 
-The Vercel production deployment `dpl_235i6tShRVS8AYSK5swkXThgyeh4` reports `READY` for commit `9f61a34` from `feat/vercel-adaptation`. This establishes deployment state, not complete workflow correctness.
+Vercel deployment `dpl_235i6tShRVS8AYSK5swkXThgyeh4` served commit `9f61a34` from `feat/vercel-adaptation`. Its [CI run](https://github.com/atanubera07/BloodSync/actions/runs/38839622394) passed six jobs but failed the authenticated browser check: the partial `Password` label lookup matched both the input and the eye button. A READY deployment was therefore insufficient evidence of a complete release.
 
-GitHub CI run [38839622394](https://github.com/atanubera07/BloodSync/actions/runs/38839622394) for that commit failed. The `lint-format`, `unit` (including API coverage), `build`, `docker-build`, `security`, and `codeql` jobs passed. The API integration script passed; the browser portion of the `integration` job failed.
+## Refinements
 
-The browser failure is specific: `scripts/browser-auth-check.mjs` used a partial `Password` label lookup that matched both the sign-in input and its new `Show password` control. Public routes at 320px and 1440px and the home page at 200% CSS zoom passed in that run. The authenticated journey stopped before sign-in and must be repeated.
+| Priority | Area                                | Result                                                                                                                                          | Evidence                                                                                                |
+| -------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| P0       | Dependencies                        | Updated Next.js, Zod, Nodemailer, Vitest and affected transitive packages within their current majors.                                          | Dependency audit: no known vulnerabilities after the update; 13 advisories before it.                   |
+| P0       | Authentication abuse                | Retained an aggregate IP bucket alongside email/token and authenticated-user buckets. Changing target emails no longer resets the IP allowance. | Rate-limit regression tests and real Redis integration passed.                                          |
+| P0       | Password recovery                   | Reset claims check expiry inside the transaction, serialize on the user row, invalidate outstanding reset links and revoke sessions.            | Reset/reuse/expiry unit tests and integration passed.                                                   |
+| P0       | Security audit events               | Normalize both local and Vercel API prefixes; consent reads no longer count as consent grants.                                                  | Audit interceptor tests cover both prefixes and read/mutation methods.                                  |
+| P0       | Response, payload and CSRF handling | API responses use `no-store`; the 64 KB JSON limit is enforced; malformed UTF-8 token lengths return a denial instead of throwing.              | Header assertions in integration and a CSRF regression test passed.                                     |
+| P0       | Concurrent consent and interests    | Interest creation serializes with donor/profile/consent and request writes, then checks current state within the transaction.                   | 4 asynchronous unit regressions and a real concurrent withdrawal/response integration invariant passed. |
+| P1       | Donor consent                       | Withdrawal clears all consent controls; save and withdrawal cannot run together; dashboard and matching guidance reflect paused consent.        | Donor workflow and dashboard regression tests passed.                                                   |
+| P1       | Matching                            | Request owners are excluded from their own donor candidate lists.                                                                               | Matching SQL regression passed; ownership/approval/consent integration passed.                          |
+| P1       | Account guidance                    | Correctly authenticated but unverified users see verification guidance and an action to request a link.                                         | Sign-in regression passed.                                                                              |
+| P1       | Feedback                            | Network failures on a refresh retry produce an error popup; account deletion and request closure have explicit success messages.                | API client popup regressions passed.                                                                    |
+| P1       | Consistency                         | Donor screening copy reads the configurable eligibility constants. The profile approval label describes review status.                          | Web type checking and tests passed.                                                                     |
+| P1       | Release checks                      | Fixed the browser password selector and made readiness exhaustion fail explicitly. Updated deployment, support, and rollback documentation.     | Local integration passed; authenticated browser and CI verification recorded below.                     |
 
-## Fixes in this review
+## Verification
 
-| Area                        | Change                                                                                                                | Verification status                                                  |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Authenticated browser smoke | Match the password label exactly so the visibility button cannot be selected as an input.                             | Pending CI for the refinement commit.                                |
-| CI startup checks           | Fail explicitly if API or web readiness never succeeds during the retry window.                                       | Pending CI for the refinement commit.                                |
-| Deployment documentation    | Record the deployed baseline, release branch, public health routes, and requirement to check CI for the deployed SHA. | Source checked against Vercel metadata and API prefix configuration. |
-| Operations and support      | Document Vercel checks and rollback considerations; include the production branch in the security support policy.     | Documentation review only; no rollback or incident drill performed.  |
+| Check                                                    | Result                                                                                                                                                                                                           |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API type checking and build                              | Pass                                                                                                                                                                                                             |
+| API unit tests and coverage                              | 82 tests in 21 files passed after the transaction fix. The earlier 78-test coverage run measured statements 63.68%, branches 55.55%, functions 69.49%, lines 65.47%; configured gates passed.                    |
+| Web type checking and tests                              | 19 tests in 5 files passed.                                                                                                                                                                                      |
+| Web production build                                     | Pass with Next.js 15.5.28.                                                                                                                                                                                       |
+| PostGIS, Redis, and Mailpit integration                  | 2 tests passed on the final API, including oversized-body rejection, session rotation/reuse, CSRF, approval, matching, ownership, concurrent consent withdrawal, exact export ownership and deletion.            |
+| Formatting and lint                                      | Pass before final release verification.                                                                                                                                                                          |
+| Dependency audit                                         | No known vulnerabilities.                                                                                                                                                                                        |
+| Authenticated browser and responsive/accessibility sweep | Pass: real local authenticated browser journey; 90 page/viewport cases at 320, 375, 768, 1024 and 1440px; representative axe, keyboard focus/menu and protected-route redirect checks.                           |
+| GitHub CI for the refinement commit                      | Pending all seven jobs.                                                                                                                                                                                          |
+| Production deployment and post-release checks            | Pending CI.                                                                                                                                                                                                      |
+| CodeRabbit                                               | Not run. CLI 0.9.1 installed, but login returned `environment_unsupported`; this environment needs an Agentic API key or authentication from a user-controlled terminal. No CodeRabbit review result is claimed. |
 
-## Completion criteria
+The workspace was unavailable during initial source review, then restored for local execution. All accounts used by integration and browser checks are synthetic. No production accounts were created during this review.
 
-Before releasing the refinement, require all seven CI jobs to pass on its commit. Repeat affected synthetic browser journeys and check production liveness, readiness, and authorization denials after deployment. Record the actual commit and results here when verification completes.
+## Remaining work before real-data use
 
-The execution workspace was unavailable during the initial source review. No local tests, browser sessions, migration commands, or production account mutations were performed as part of that initial review.
-
-## Remaining limits
-
-Independent security and clinical review, representative device and load testing, email and job retry observation, backup restore practice, incident ownership, and a legal retention policy remain open. A successful synthetic-data check does not resolve these requirements for real-data use.
+- Backend interest creation now serializes with profile, consent and request writes, rechecking current state within the transaction. A future request-revision contract could additionally ask donors to reconfirm details that changed since the page was loaded; that user-facing version acknowledgement is not part of the present API.
+- Request-service unit statement coverage is 32.2%; integration covers its main ownership and lifecycle paths, but that does not replace focused coverage of concurrency and failures.
+- Independent security and clinical review, representative device/load tests, backup restore practice, incident ownership, monitoring alerts, and a legal retention policy remain open. Synthetic-data tests do not establish these operational guarantees.

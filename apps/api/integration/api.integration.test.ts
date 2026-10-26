@@ -78,6 +78,13 @@ async function account(label: string) {
 
 describe('PostGIS, Redis and Mailpit integration', () => {
   it('checks account sessions, cookie CSRF, reset and lockout', async () => {
+    const oversized = await fetch(`${api}/auth/login`, {
+      method: 'POST',
+      headers: { Origin: origin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'oversized@example.test', password: 'a'.repeat(70 * 1024) }),
+    });
+    expect(oversized.status).toBe(413);
+    expect(oversized.headers.get('cache-control')).toBe('no-store');
     const client = new Client();
     const email = `integration-auth-${suffix}@example.test`;
     await check(client, 'POST', '/auth/register', 201, {
@@ -265,11 +272,23 @@ describe('PostGIS, Redis and Mailpit integration', () => {
     expect(await check(donor, 'GET', '/donors/me/matches', 200)).toEqual([]);
     await check(patient, 'PATCH', `/requests/${id}`, 409, { units: 4 });
     await check(donor, 'POST', `/donors/me/interests/${id}`, 404);
-    await check(donor, 'PUT', '/donors/me', 200, { ...profile, city: 'Howrah' });
+    const privacyRequest = await check(patient, 'POST', '/requests', 201, request);
+    const privacyRequestId = privacyRequest.id as string;
+    const [interest, withdrawal] = await Promise.all([
+      donor.call('POST', `/donors/me/interests/${privacyRequestId}`),
+      donor.call('DELETE', '/me/consent'),
+    ]);
+    expect([200, 403]).toContain(interest.status);
+    expect(withdrawal.status).toBe(200);
+    expect(await check(patient, 'GET', `/requests/${privacyRequestId}/interests`, 200)).toEqual([]);
+    await check(patient, 'DELETE', `/requests/${privacyRequestId}`, 200);
+    await check(donor, 'PUT', '/donors/me', 200, { ...profile, city: 'Howrah', consent });
     await check(donor, 'GET', '/donors/me/matches', 403);
     const exported = await check(patient, 'GET', '/me/export', 200);
     expect(exported.user.email).toBe(patientEmail);
-    expect(exported.requests).toHaveLength(1);
+    expect((exported.requests as { id: string }[]).map((item) => item.id).sort()).toEqual(
+      [id, privacyRequestId].sort(),
+    );
     expect(JSON.stringify(exported)).not.toMatch(/passwordHash|tokenHash/);
     expect((await check(otherPatient, 'GET', '/me/export', 200)).requests).toEqual([]);
     await check(otherPatient, 'DELETE', '/me', 403, { password: 'wrong' });

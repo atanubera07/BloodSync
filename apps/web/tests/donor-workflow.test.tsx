@@ -40,14 +40,18 @@ describe('donor consent workflow', () => {
   it('clears consent choices on withdrawal and does not opt back into matching on the next save', async () => {
     vi.mocked(api).mockResolvedValue(new Response(JSON.stringify(profile)));
     vi.mocked(apiJson).mockImplementation(async (path) =>
-      path === '/me/consent' ? ({ ok: true } as never) : ({ ...profile, consentToMatch: false } as never),
+      path === '/me/consent'
+        ? ({ ok: true } as never)
+        : ({ ...profile, consentToMatch: false } as never),
     );
     const view = render(<DonorProfilePage />);
     const matching = await screen.findByLabelText('I agree to appear in anonymized donor matches.');
     await waitFor(() => expect(matching).toBeChecked());
     fireEvent.click(screen.getByRole('button', { name: 'Withdraw donor consent' }));
 
-    expect(await screen.findByText('Consent withdrawn. Matching and contact sharing stopped.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Consent withdrawn. Matching and contact sharing stopped.'),
+    ).toBeInTheDocument();
     expect(matching).not.toBeChecked();
     const health = screen.getByLabelText(/I consent to processing my screening details/);
     const contact = screen.getByLabelText(/I consent to sharing my account name and email/);
@@ -92,7 +96,7 @@ describe('donor consent workflow', () => {
     vi.mocked(apiJson).mockRejectedValue(new ApiError('Matching is unavailable', status));
     render(<DonorMatchesPage />);
 
-    expect(await screen.findByRole('link', { name: 'Open donor profile' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: /Open donor profile/ })).toHaveAttribute(
       'href',
       '/donor/profile',
     );

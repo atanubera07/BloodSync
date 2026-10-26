@@ -9,7 +9,9 @@ function fixture(path: string, method = 'POST') {
   const create = vi.fn().mockResolvedValue({});
   const interceptor = new AuditInterceptor(
     { auditEvent: { create } } as unknown as PrismaService,
-    { values: { SESSION_SECRET: 'synthetic-audit-secret-at-least-32-characters' } } as ConfigService,
+    {
+      values: { SESSION_SECRET: 'synthetic-audit-secret-at-least-32-characters' },
+    } as ConfigService,
   );
   const context = {
     switchToHttp: () => ({
@@ -30,7 +32,11 @@ describe('audit events', () => {
     const { create, interceptor, context } = fixture(`${prefix}/auth/login`);
     await lastValueFrom(interceptor.intercept(context, { handle: () => of({ ok: true }) }));
     expect(create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ action: 'LOGIN', result: 'SUCCESS', actorId: 'synthetic-user' }),
+      data: expect.objectContaining({
+        action: 'LOGIN',
+        result: 'SUCCESS',
+        actorId: 'synthetic-user',
+      }),
     });
   });
 
@@ -38,7 +44,9 @@ describe('audit events', () => {
     const { create, interceptor, context } = fixture('/api/v1/auth/login');
     await expect(
       lastValueFrom(
-        interceptor.intercept(context, { handle: () => throwError(() => new UnauthorizedException()) }),
+        interceptor.intercept(context, {
+          handle: () => throwError(() => new UnauthorizedException()),
+        }),
       ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(create).toHaveBeenCalledWith({

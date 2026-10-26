@@ -65,7 +65,7 @@ try {
   await page.getByRole('button', { name: 'Close request' }).waitFor();
   page.once('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Close request' }).click();
-  await page.getByText('Request closed.').waitFor();
+  await page.locator('#main-content').getByText('Request closed.', { exact: true }).waitFor();
   console.log(
     'PASS: browser signup, verification, request form, secondary error, close and cookies',
   );
